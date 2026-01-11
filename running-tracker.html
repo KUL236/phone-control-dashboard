@@ -24,7 +24,7 @@
             border-radius: 12px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
             padding: 40px;
-            max-width: 500px;
+            max-width: 550px;
             text-align: center;
         }
         h1 {
@@ -34,8 +34,9 @@
         }
         p {
             color: #666;
-            margin-bottom: 25px;
+            margin-bottom: 15px;
             line-height: 1.6;
+            font-size: 14px;
         }
         .buttons {
             display: flex;
@@ -68,30 +69,42 @@
             background: #e0e0e0;
             transform: translateY(-2px);
         }
+        .btn-success {
+            background: #28a745;
+            color: white;
+            padding: 12px 20px;
+            font-size: 14px;
+        }
+        .btn-success:hover {
+            background: #218838;
+        }
         .info {
             background: #f8f9fa;
             border-left: 4px solid #667eea;
             padding: 15px;
-            margin-top: 30px;
+            margin-top: 20px;
             text-align: left;
             border-radius: 4px;
+            font-size: 13px;
         }
         .info strong {
             color: #333;
+            display: block;
+            margin-bottom: 8px;
         }
         .info ul {
-            margin-top: 10px;
             margin-left: 20px;
         }
         .info li {
-            margin: 5px 0;
+            margin: 4px 0;
             color: #555;
         }
         .status {
-            margin-top: 20px;
+            margin-top: 15px;
             padding: 12px;
             border-radius: 6px;
             font-weight: 500;
+            font-size: 14px;
         }
         .status.success {
             background: #d4edda;
@@ -105,9 +118,49 @@
             background: #f8d7da;
             color: #842029;
         }
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+        }
         .icon {
             font-size: 48px;
             margin-bottom: 15px;
+        }
+        .location-input {
+            display: none;
+            margin-top: 20px;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+        }
+        .location-input input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+        .location-input button {
+            margin-top: 10px;
+            width: 100%;
+        }
+        .preset-btn {
+            background: #f0f0f0;
+            color: #333;
+            padding: 10px 15px;
+            margin: 5px;
+            font-size: 13px;
+            border-radius: 6px;
+            cursor: pointer;
+            border: 1px solid #ddd;
+        }
+        .preset-btn:hover {
+            background: #e0e0e0;
+        }
+        .divider {
+            margin: 20px 0;
+            border-top: 1px solid #ddd;
         }
     </style>
 </head>
@@ -127,52 +180,61 @@
                 🔗 Share Location Link
             </button>
         </div>
+
+        <div class="divider"></div>
+
+        <p style="margin-bottom: 10px;"><strong>No GPS? Use Manual Location:</strong></p>
+        <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px;">
+            <button class="preset-btn" onclick="usePresetLocation(26.9124, 75.7873)">📍 Jaipur</button>
+            <button class="preset-btn" onclick="usePresetLocation(28.7041, 77.1025)">📍 Delhi</button>
+            <button class="preset-btn" onclick="usePresetLocation(19.0760, 72.8777)">📍 Mumbai</button>
+            <button class="preset-btn" onclick="usePresetLocation(40.7128, -74.0060)">📍 New York</button>
+        </div>
+        <button class="btn-secondary" onclick="toggleManualInput()" style="width: 100%;">
+            ✏️ Enter Custom Location
+        </button>
+
+        <div class="location-input" id="manualInput">
+            <p style="text-align: left; margin-bottom: 8px;"><strong>Enter Latitude & Longitude:</strong></p>
+            <input type="number" id="latInput" placeholder="Latitude (e.g., 26.9124)" step="0.0001">
+            <input type="number" id="lngInput" placeholder="Longitude (e.g., 75.7873)" step="0.0001">
+            <button class="btn-success" onclick="useManualLocation()">✅ Use This Location</button>
+        </div>
         
         <div class="info">
-            <strong>📋 Setup Instructions:</strong>
+            <strong>📋 How to Use:</strong>
             <ul>
-                <li>✅ Enable GPS on your phone (Location Services)</li>
-                <li>✅ Allow location permission when prompted</li>
-                <li>✅ Be in an open area or outdoors for better GPS signal</li>
-                <li>✅ Wait 10-15 seconds for GPS to lock</li>
-                <li>✅ If it fails, tap "Try Again" button</li>
-            </ul>
-            <br>
-            <strong>Features:</strong>
-            <ul>
-                <li>✅ Real-time GPS tracking</li>
-                <li>✅ Distance calculation</li>
-                <li>✅ Speed monitoring</li>
-                <li>✅ Share location with others</li>
-                <li>✅ Works on all devices</li>
+                <li>✅ Tap "Open Google Maps" to start</li>
+                <li>✅ Or select a preset city above</li>
+                <li>✅ Or enter your own coordinates</li>
+                <li>✅ Share location link with others</li>
             </ul>
         </div>
         
-        <div id="locationInfo" style="display: none; margin-top: 20px; text-align: left;">
-            <strong>Your Location:</strong>
-            <p id="coordsDisplay" style="margin-top: 8px; font-family: monospace; color: #667eea;"></p>
+        <div id="locationInfo" style="display: none; margin-top: 20px; text-align: left; background: #e8f4f8; padding: 15px; border-radius: 6px;">
+            <strong>📍 Current Location:</strong>
+            <p id="coordsDisplay" style="margin-top: 8px; font-family: monospace; color: #667eea; font-size: 13px;"></p>
         </div>
     </div>
 
     <script>
         let currentLocation = null;
 
-        // Request location on page load
+        // Try to get GPS on page load
         document.addEventListener('DOMContentLoaded', () => {
-            getLocation();
+            getLocationGPS();
         });
 
-        function getLocation() {
+        function getLocationGPS() {
             const statusEl = document.getElementById('status');
             
             if (!navigator.geolocation) {
-                statusEl.innerHTML = '<div class="status error">❌ Geolocation not supported on your browser</div>';
+                statusEl.innerHTML = '<div class="status info">ℹ️ GPS not available - please use manual location below</div>';
                 return;
             }
 
-            statusEl.innerHTML = '<div class="status loading">📍 Getting your location... (may take 10-15 seconds)</div>';
+            statusEl.innerHTML = '<div class="status loading">📍 Trying to get GPS... (may take 10-15 seconds)</div>';
 
-            // Try to get location with longer timeout and high accuracy
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     currentLocation = {
@@ -181,71 +243,87 @@
                         accuracy: position.coords.accuracy
                     };
                     
-                    statusEl.innerHTML = `<div class="status success">✅ Location acquired (Accuracy: ±${Math.round(position.coords.accuracy)}m)</div>`;
+                    statusEl.innerHTML = `<div class="status success">✅ GPS acquired (±${Math.round(position.coords.accuracy)}m)</div>`;
                     document.getElementById('locationInfo').style.display = 'block';
                     document.getElementById('coordsDisplay').textContent = 
                         `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`;
-                    
-                    // Start watching position for updates
-                    watchPosition();
                 },
                 (error) => {
-                    let errorMsg = 'Unknown error';
-                    switch(error.code) {
-                        case error.PERMISSION_DENIED:
-                            errorMsg = 'Location permission denied. Please enable GPS and allow location access.';
-                            break;
-                        case error.POSITION_UNAVAILABLE:
-                            errorMsg = 'GPS signal not available. Please enable GPS and try outside.';
-                            break;
-                        case error.TIMEOUT:
-                            errorMsg = 'GPS timeout - took too long. Make sure GPS is enabled.';
-                            break;
-                    }
-                    statusEl.innerHTML = `<div class="status error">⚠️ ${errorMsg}<br><br><button onclick="getLocation()" style="margin-top:10px; padding:8px 12px; background:#667eea; color:white; border:none; border-radius:4px; cursor:pointer;">🔄 Try Again</button></div>`;
+                    statusEl.innerHTML = '<div class="status info">ℹ️ GPS not available - please select a location below</div>';
+                    console.log('GPS error:', error.code);
                 },
                 {
                     enableHighAccuracy: true,
-                    timeout: 30000,  // 30 second timeout
+                    timeout: 15000,
                     maximumAge: 0
                 }
             );
         }
 
-        function watchPosition() {
-            navigator.geolocation.watchPosition(
-                (position) => {
-                    currentLocation = {
-                        lat: position.coords.latitude,
-                        lng: position.coords.longitude,
-                        accuracy: position.coords.accuracy
-                    };
-                    document.getElementById('coordsDisplay').textContent = 
-                        `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)} (±${Math.round(position.coords.accuracy)}m)`;
-                },
-                null,
-                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
-            );
+        function usePresetLocation(lat, lng) {
+            currentLocation = {
+                lat: lat,
+                lng: lng,
+                accuracy: 50
+            };
+            
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = `<div class="status success">✅ Location set</div>`;
+            document.getElementById('locationInfo').style.display = 'block';
+            document.getElementById('coordsDisplay').textContent = 
+                `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`;
+            document.getElementById('manualInput').style.display = 'none';
+        }
+
+        function toggleManualInput() {
+            const input = document.getElementById('manualInput');
+            input.style.display = input.style.display === 'none' ? 'block' : 'none';
+        }
+
+        function useManualLocation() {
+            const lat = parseFloat(document.getElementById('latInput').value);
+            const lng = parseFloat(document.getElementById('lngInput').value);
+
+            if (isNaN(lat) || isNaN(lng)) {
+                alert('❌ Please enter valid latitude and longitude');
+                return;
+            }
+
+            if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
+                alert('❌ Invalid coordinates\nLatitude: -90 to 90\nLongitude: -180 to 180');
+                return;
+            }
+
+            currentLocation = {
+                lat: lat,
+                lng: lng,
+                accuracy: 50
+            };
+
+            const statusEl = document.getElementById('status');
+            statusEl.innerHTML = `<div class="status success">✅ Custom location set</div>`;
+            document.getElementById('locationInfo').style.display = 'block';
+            document.getElementById('coordsDisplay').textContent = 
+                `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`;
+            document.getElementById('manualInput').style.display = 'none';
         }
 
         function openGoogleMaps() {
             if (!currentLocation) {
-                alert('📍 Location not ready yet. Please wait a moment for GPS to respond...');
+                alert('📍 Please select or enter a location first');
                 return;
             }
 
-            // Open Google Maps with current location
             const mapsUrl = `https://maps.google.com/?q=${currentLocation.lat},${currentLocation.lng}&z=16`;
             window.open(mapsUrl, '_blank');
         }
 
         function shareLocation() {
             if (!currentLocation) {
-                alert('📍 Location not ready yet. Please wait a moment for GPS to respond...');
+                alert('📍 Please select or enter a location first');
                 return;
             }
 
-            // Create shareable Google Maps link
             const shareUrl = `https://maps.google.com/?q=${currentLocation.lat},${currentLocation.lng}&z=16`;
             
             if (navigator.share) {
@@ -255,7 +333,6 @@
                     url: shareUrl
                 }).catch(err => console.log('Share error:', err));
             } else {
-                // Fallback: copy to clipboard
                 const tempInput = document.createElement('textarea');
                 tempInput.value = shareUrl;
                 document.body.appendChild(tempInput);
