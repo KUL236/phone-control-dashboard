@@ -1,0 +1,195 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Phone Control Dashboard</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>`
+    <div class="container">
+        <header class="header">
+            <h1>📱 Phone Control Dashboard</h1>
+            <p class="subtitle">Control your device settings from anywhere</p>
+        </header>
+
+        <main class="main-content">
+            <!-- Device Info Section -->
+            <section class="card device-info-card">
+                <h2>Device Information</h2>
+                <div class="info-grid">
+                    <div class="info-item">
+                        <span class="label">Device:</span>
+                        <span class="value" id="deviceInfo">Detecting...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Battery:</span>
+                        <span class="value" id="batteryLevel">Detecting...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Connection:</span>
+                        <span class="value" id="networkStatus">Checking...</span>
+                    </div>
+                    <div class="info-item">
+                        <span class="label">Orientation:</span>
+                        <span class="value" id="orientation">Portrait</span>
+                    </div>
+                </div>
+                <div class="battery-bar">
+                    <div class="battery-fill" id="batteryFill"></div>
+                </div>
+            </section>
+
+            <!-- Display Controls Section -->
+            <section class="card">
+                <h2>Display Controls</h2>
+                <div class="control-group">
+                    <div class="control-item">
+                        <label>Brightness</label>
+                        <input type="range" id="brightnessSlider" min="0" max="100" value="80" class="slider">
+                        <span class="value-display" id="brightnessValue">80%</span>
+                    </div>
+                    <button class="control-btn" id="toggleFlashlight">
+                        <span class="icon">💡</span> Flashlight
+                    </button>
+                </div>
+            </section>
+
+            <!-- Audio Controls Section -->
+            <section class="card">
+                <h2>Audio Controls</h2>
+                <div class="control-group">
+                    <div class="control-item">
+                        <label>Volume</label>
+                        <input type="range" id="volumeSlider" min="0" max="100" value="70" class="slider">
+                        <span class="value-display" id="volumeValue">70%</span>
+                    </div>
+                    <div class="control-item">
+                        <label>Sound Mode</label>
+                        <div class="mode-buttons">
+                            <button class="mode-btn active" data-mode="sound">🔊 Sound</button>
+                            <button class="mode-btn" data-mode="vibrate">📳 Vibrate</button>
+                            <button class="mode-btn" data-mode="silent">🔇 Silent</button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Device Settings Section -->
+            <section class="card">
+                <h2>Device Settings</h2>
+                <div class="settings-grid">
+                    <div class="setting-item">
+                        <span>🌍 Airplane Mode</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="airplaneMode">
+                            <span class="slider-toggle"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>📶 Mobile Data</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="mobileData" checked>
+                            <span class="slider-toggle"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>📡 WiFi</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="wifi" checked>
+                            <span class="slider-toggle"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>🔵 Bluetooth</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="bluetooth">
+                            <span class="slider-toggle"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>🔒 Auto-rotate</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="autoRotate" checked>
+                            <span class="slider-toggle"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>🌙 Dark Mode</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="darkMode">
+                            <span class="slider-toggle"></span>
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Gesture & Haptic Section -->
+            <section class="card">
+                <h2>Device Actions</h2>
+                <div class="action-buttons">
+                    <button class="action-btn vibrate-btn" id="vibrateBtn">
+                        <span class="icon">📳</span> Vibrate
+                    </button>
+                    <button class="action-btn screenshot-btn" id="screenshotBtn">
+                        <span class="icon">📸</span> Screenshot
+                    </button>
+                    <button class="action-btn screenshot-btn" id="lockScreenBtn">
+                        <span class="icon">🔐</span> Lock Screen
+                    </button>
+                </div>
+            </section>
+
+            <!-- System Info Section -->
+            <section class="card">
+                <h2>System Information</h2>
+                <div class="system-info">
+                    <div class="info-row">
+                        <span class="label">Storage Used:</span>
+                        <div class="storage-bar">
+                            <div class="storage-fill" id="storageFill"></div>
+                        </div>
+                        <span class="value" id="storageValue">0 GB</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Memory Used:</span>
+                        <div class="memory-bar">
+                            <div class="memory-fill" id="memoryFill"></div>
+                        </div>
+                        <span class="value" id="memoryValue">0 GB</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="label">Screen Timeout:</span>
+                        <select id="screenTimeout" class="select-control">
+                            <option value="15">15 seconds</option>
+                            <option value="30">30 seconds</option>
+                            <option value="60" selected>1 minute</option>
+                            <option value="300">5 minutes</option>
+                            <option value="600">10 minutes</option>
+                            <option value="1800">30 minutes</option>
+                        </select>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Actions Section -->
+            <section class="card">
+                <h2>Quick Actions</h2>
+                <div class="quick-actions">
+                    <button class="quick-action" id="callEmergency">📞 Emergency</button>
+                    <button class="quick-action" id="openCamera">📷 Camera</button>
+                    <button class="quick-action" id="openSettings">⚙️ Settings</button>
+                    <button class="quick-action" id="openGallery">🖼️ Gallery</button>
+                </div>
+            </section>
+        </main>
+
+        <footer class="footer">
+            <p>💡 Tip: Refreshing the page will sync with your device's current settings</p>
+            <p id="lastUpdated">Last updated: Just now</p>
+        </footer>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
