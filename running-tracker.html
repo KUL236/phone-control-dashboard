@@ -503,6 +503,18 @@
             );
         }
 
+        // Try to get current position as a Promise (used when user presses Start)
+        function getCurrentPositionAsync(opts = { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }) {
+            return new Promise((resolve, reject) => {
+                if (!navigator.geolocation) return reject(new Error('Geolocation not supported'));
+                navigator.geolocation.getCurrentPosition(
+                    pos => resolve(pos),
+                    err => reject(err),
+                    opts
+                );
+            });
+        }
+
         function startContinuousTracking() {
             if (runState.watchId !== null) {
                 navigator.geolocation.clearWatch(runState.watchId);
@@ -568,10 +580,26 @@
         }
 
         // ==================== RUNNING CONTROLS ====================
-        function startRun() {
+        async function startRun() {
+            // If no location yet, try a quick GPS fetch (short timeout)
             if (!currentLocation) {
-                showAlert('❌ Please select a location first', 'error');
-                return;
+                updateLocationStatus('📍 Trying to get a quick GPS fix before starting...', 'loading');
+                try {
+                    const pos = await getCurrentPositionAsync({ enableHighAccuracy: true, timeout: 5000, maximumAge: 0 });
+                    currentLocation = {
+                        lat: pos.coords.latitude,
+                        lng: pos.coords.longitude,
+                        accuracy: pos.coords.accuracy
+                    };
+                    document.getElementById('gpsInfo').style.display = 'block';
+                    updateCoordinatesDisplay();
+                    updateLocationStatus(`✅ GPS acquired (±${Math.round(pos.coords.accuracy)}m)`, 'success');
+                } catch (e) {
+                    updateLocationStatus('⚠️ Unable to get GPS — please select a preset location', 'error');
+                    document.getElementById('presetContainer').style.display = 'flex';
+                    showAlert('❌ Could not acquire GPS. Select a preset or enter coordinates.', 'error');
+                    return;
+                }
             }
 
             runState.isRunning = true;
