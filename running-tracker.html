@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Running Tracker - Real-time GPS Tracking</title>
+    <link rel="stylesheet" href="running-tracker.css">
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_GOOGLE_MAPS_API_KEY&libraries=geometry"></script>
+</head>
+<body>
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🏃 Running Tracker</h1>
+            <p class="subtitle">Real-time GPS Running Tracker with Safety Alerts</p>
+        </header>
+
+        <!-- Main Content -->
+        <main class="main-content">
+            <!-- Map Section -->
+            <section class="card map-card">
+                <div id="map" class="map"></div>
+                <div class="map-overlay">
+                    <div class="current-location">
+                        <span class="label">📍 Current Location</span>
+                        <span class="value" id="locationDisplay">Detecting...</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Stats Section -->
+            <section class="card stats-card">
+                <h2>📊 Running Statistics</h2>
+                <div class="stats-grid">
+                    <div class="stat-item">
+                        <span class="stat-label">Distance</span>
+                        <span class="stat-value" id="distance">0.00</span>
+                        <span class="stat-unit">KM</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Time</span>
+                        <span class="stat-value" id="time">00:00:00</span>
+                        <span class="stat-unit">HH:MM:SS</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Speed</span>
+                        <span class="stat-value" id="speed">0.0</span>
+                        <span class="stat-unit">KM/H</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Pace</span>
+                        <span class="stat-value" id="pace">00:00</span>
+                        <span class="stat-unit">MIN/KM</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Detailed Stats -->
+            <section class="card">
+                <h2>📈 Detailed Information</h2>
+                <div class="detailed-stats">
+                    <div class="detail-row">
+                        <span class="label">Average Speed:</span>
+                        <span class="value" id="avgSpeed">0.0 km/h</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Max Speed:</span>
+                        <span class="value" id="maxSpeed">0.0 km/h</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Total Meters:</span>
+                        <span class="value" id="meters">0 m</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Calories Burned:</span>
+                        <span class="value" id="calories">0</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">Elevation Gain:</span>
+                        <span class="value" id="elevation">0 m</span>
+                    </div>
+                    <div class="detail-row">
+                        <span class="label">GPS Accuracy:</span>
+                        <span class="value" id="accuracy">--</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Control Buttons -->
+            <section class="card">
+                <h2>🎮 Controls</h2>
+                <div class="control-buttons">
+                    <button class="btn btn-start" id="startBtn">
+                        <span class="icon">▶️</span> Start Run
+                    </button>
+                    <button class="btn btn-pause" id="pauseBtn" disabled>
+                        <span class="icon">⏸️</span> Pause
+                    </button>
+                    <button class="btn btn-resume" id="resumeBtn" disabled>
+                        <span class="icon">▶️</span> Resume
+                    </button>
+                    <button class="btn btn-stop" id="stopBtn" disabled>
+                        <span class="icon">⏹️</span> Stop
+                    </button>
+                </div>
+            </section>
+
+            <!-- Safety Settings -->
+            <section class="card">
+                <h2>⚠️ Safety Alerts & Settings</h2>
+                <div class="settings-group">
+                    <div class="setting-item">
+                        <span>Enable Danger Alerts</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="dangerAlerts" checked>
+                            <span class="slider-toggle"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>Enable Vibration</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="vibrationToggle" checked>
+                            <span class="slider-toggle"></span>
+                        </label>
+                    </div>
+                    <div class="setting-item">
+                        <span>Enable Sound Alerts</span>
+                        <label class="toggle">
+                            <input type="checkbox" id="soundToggle" checked>
+                            <span class="slider-toggle"></span>
+                        </label>
+                    </div>
+                </div>
+
+                <div class="danger-zones">
+                    <h3>Danger Zone Settings</h3>
+                    <div class="setting-row">
+                        <label>Speed Warning Threshold (km/h):</label>
+                        <input type="number" id="speedThreshold" min="10" max="50" value="25" class="input-control">
+                    </div>
+                    <div class="setting-row">
+                        <label>Danger Zone Check Interval (seconds):</label>
+                        <input type="number" id="dangerCheckInterval" min="5" max="60" value="30" class="input-control">
+                    </div>
+                </div>
+            </section>
+
+            <!-- Alerts Display -->
+            <section class="card alerts-card">
+                <h2>🚨 Active Alerts</h2>
+                <div id="alertsList" class="alerts-list">
+                    <p class="no-alerts">No active alerts</p>
+                </div>
+            </section>
+
+            <!-- Route History -->
+            <section class="card">
+                <h2>📍 Route Path</h2>
+                <div class="route-info">
+                    <span>Total Points: <strong id="pointCount">0</strong></span>
+                    <span>Route Duration: <strong id="routeDuration">00:00:00</strong></span>
+                    <button class="btn btn-secondary" id="clearRouteBtn">Clear Route</button>
+                </div>
+            </section>
+
+            <!-- Export & Share -->
+            <section class="card">
+                <h2>💾 Save & Share</h2>
+                <div class="export-buttons">
+                    <button class="btn btn-info" id="saveRunBtn">
+                        <span class="icon">💾</span> Save Run
+                    </button>
+                    <button class="btn btn-info" id="shareRunBtn">
+                        <span class="icon">📤</span> Share Run
+                    </button>
+                    <button class="btn btn-info" id="downloadGPXBtn">
+                        <span class="icon">📥</span> Download GPX
+                    </button>
+                </div>
+            </section>
+
+            <!-- Run History -->
+            <section class="card">
+                <h2>📜 Recent Runs</h2>
+                <div id="runHistory" class="run-history">
+                    <p class="no-data">No runs recorded yet</p>
+                </div>
+            </section>
+        </main>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <p>🎯 Stay safe and enjoy your run!</p>
+            <p id="lastUpdated">Last updated: Just now</p>
+        </footer>
+    </div>
+
+    <!-- Alert Toast Container -->
+    <div id="toastContainer" class="toast-container"></div>
+
+    <script src="running-tracker.js"></script>
+</body>
+</html>
