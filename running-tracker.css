@@ -525,6 +525,25 @@ body {
     gap: 10px;
 }
 
+/* Diagnostics panel for mobile debugging */
+#diagnostics {
+    display: none;
+    position: fixed;
+    top: 10px;
+    left: 10px;
+    right: 10px;
+    z-index: 12000;
+    background: rgba(255, 238, 238, 0.95);
+    color: #7c0000;
+    border: 1px solid #f44336;
+    padding: 10px;
+    border-radius: 6px;
+    font-family: monospace;
+    font-size: 13px;
+    white-space: pre-wrap;
+    box-shadow: 0 6px 20px rgba(0,0,0,0.2);
+}
+
 .toast {
     padding: 15px 20px;
     background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));

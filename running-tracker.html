@@ -15,6 +15,7 @@
     </style>
 </head>
 <body>
+    <div id="diagnostics" aria-hidden="true"></div>
     <div class="container">
         <!-- Header -->
         <header class="header">
@@ -204,6 +205,33 @@
 
     <!-- Alert Toast Container -->
     <div id="toastContainer" class="toast-container"></div>
+
+    <script>
+    (function(){
+        var diag = document.getElementById('diagnostics');
+        if(!diag){
+            diag = document.createElement('div');
+            diag.id = 'diagnostics';
+            document.body.appendChild(diag);
+        }
+        function show(msg){
+            diag.style.display = 'block';
+            diag.setAttribute('aria-hidden','false');
+            diag.innerText = msg;
+        }
+        window.addEventListener('error', function(e){
+            try{ show('Error: '+e.message+'\nFile: '+e.filename+':'+e.lineno+':'+e.colno); }catch(err){}
+        });
+        window.addEventListener('unhandledrejection', function(e){
+            try{ show('Unhandled rejection: '+(e.reason && e.reason.message ? e.reason.message : JSON.stringify(e.reason))); }catch(err){}
+        });
+        // provide a quick ready message
+        window.addEventListener('load', function(){
+            diag.style.display = 'none';
+            diag.setAttribute('aria-hidden','true');
+        });
+    })();
+    </script>
 
     <script src="running-tracker.js"></script>
 </body>
