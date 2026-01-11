@@ -129,6 +129,15 @@
         </div>
         
         <div class="info">
+            <strong>📋 Setup Instructions:</strong>
+            <ul>
+                <li>✅ Enable GPS on your phone (Location Services)</li>
+                <li>✅ Allow location permission when prompted</li>
+                <li>✅ Be in an open area or outdoors for better GPS signal</li>
+                <li>✅ Wait 10-15 seconds for GPS to lock</li>
+                <li>✅ If it fails, tap "Try Again" button</li>
+            </ul>
+            <br>
             <strong>Features:</strong>
             <ul>
                 <li>✅ Real-time GPS tracking</li>
@@ -157,12 +166,13 @@
             const statusEl = document.getElementById('status');
             
             if (!navigator.geolocation) {
-                statusEl.innerHTML = '<div class="status error">❌ Geolocation not supported</div>';
+                statusEl.innerHTML = '<div class="status error">❌ Geolocation not supported on your browser</div>';
                 return;
             }
 
-            statusEl.innerHTML = '<div class="status loading">📍 Getting your location...</div>';
+            statusEl.innerHTML = '<div class="status loading">📍 Getting your location... (may take 10-15 seconds)</div>';
 
+            // Try to get location with longer timeout and high accuracy
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     currentLocation = {
@@ -171,7 +181,7 @@
                         accuracy: position.coords.accuracy
                     };
                     
-                    statusEl.innerHTML = `<div class="status success">✅ Location acquired (±${Math.round(position.coords.accuracy)}m)</div>`;
+                    statusEl.innerHTML = `<div class="status success">✅ Location acquired (Accuracy: ±${Math.round(position.coords.accuracy)}m)</div>`;
                     document.getElementById('locationInfo').style.display = 'block';
                     document.getElementById('coordsDisplay').textContent = 
                         `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`;
@@ -180,11 +190,23 @@
                     watchPosition();
                 },
                 (error) => {
-                    statusEl.innerHTML = `<div class="status error">⚠️ ${error.message}</div>`;
+                    let errorMsg = 'Unknown error';
+                    switch(error.code) {
+                        case error.PERMISSION_DENIED:
+                            errorMsg = 'Location permission denied. Please enable GPS and allow location access.';
+                            break;
+                        case error.POSITION_UNAVAILABLE:
+                            errorMsg = 'GPS signal not available. Please enable GPS and try outside.';
+                            break;
+                        case error.TIMEOUT:
+                            errorMsg = 'GPS timeout - took too long. Make sure GPS is enabled.';
+                            break;
+                    }
+                    statusEl.innerHTML = `<div class="status error">⚠️ ${errorMsg}<br><br><button onclick="getLocation()" style="margin-top:10px; padding:8px 12px; background:#667eea; color:white; border:none; border-radius:4px; cursor:pointer;">🔄 Try Again</button></div>`;
                 },
                 {
                     enableHighAccuracy: true,
-                    timeout: 10000,
+                    timeout: 30000,  // 30 second timeout
                     maximumAge: 0
                 }
             );
@@ -202,14 +224,13 @@
                         `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)} (±${Math.round(position.coords.accuracy)}m)`;
                 },
                 null,
-                { enableHighAccuracy: true, maximumAge: 0 }
+                { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
             );
         }
 
         function openGoogleMaps() {
             if (!currentLocation) {
-                alert('📍 Getting location... Please wait a moment and try again');
-                getLocation();
+                alert('📍 Location not ready yet. Please wait a moment for GPS to respond...');
                 return;
             }
 
@@ -220,8 +241,7 @@
 
         function shareLocation() {
             if (!currentLocation) {
-                alert('📍 Getting location... Please wait a moment and try again');
-                getLocation();
+                alert('📍 Location not ready yet. Please wait a moment for GPS to respond...');
                 return;
             }
 
