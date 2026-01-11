@@ -3,236 +3,248 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Running Tracker - Real-time GPS Tracking</title>
-    <link rel="stylesheet" href="running-tracker.css">
-    <!-- Leaflet (OpenStreetMap) -->
-    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
-    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-    <!-- Google Maps (optional) - uses provided API key -->
-    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyCfWBZvj6EtTLeBum45vCb4d4J5Zb0ODlA&libraries=geometry" async defer></script>
+    <title>Running Tracker - Google Maps</title>
     <style>
-        #map { width: 100%; height: 500px; }
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        .container {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            padding: 40px;
+            max-width: 500px;
+            text-align: center;
+        }
+        h1 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 28px;
+        }
+        p {
+            color: #666;
+            margin-bottom: 25px;
+            line-height: 1.6;
+        }
+        .buttons {
+            display: flex;
+            gap: 12px;
+            flex-direction: column;
+        }
+        button {
+            padding: 15px 25px;
+            font-size: 16px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            font-weight: 600;
+        }
+        .btn-primary {
+            background: #667eea;
+            color: white;
+        }
+        .btn-primary:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
+        }
+        .btn-secondary {
+            background: #f0f0f0;
+            color: #333;
+        }
+        .btn-secondary:hover {
+            background: #e0e0e0;
+            transform: translateY(-2px);
+        }
+        .info {
+            background: #f8f9fa;
+            border-left: 4px solid #667eea;
+            padding: 15px;
+            margin-top: 30px;
+            text-align: left;
+            border-radius: 4px;
+        }
+        .info strong {
+            color: #333;
+        }
+        .info ul {
+            margin-top: 10px;
+            margin-left: 20px;
+        }
+        .info li {
+            margin: 5px 0;
+            color: #555;
+        }
+        .status {
+            margin-top: 20px;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 500;
+        }
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+        }
+        .status.loading {
+            background: #cfe2ff;
+            color: #084298;
+        }
+        .status.error {
+            background: #f8d7da;
+            color: #842029;
+        }
+        .icon {
+            font-size: 48px;
+            margin-bottom: 15px;
+        }
     </style>
 </head>
 <body>
-    <div id="diagnostics" aria-hidden="true" style="position: fixed; top: 10px; right: 10px; background: #000; color: #0f0; padding: 10px; font-size: 11px; max-width: 200px; z-index: 999; border-radius: 4px; font-family: monospace; max-height: 200px; overflow-y: auto;"></div>
     <div class="container">
-        <!-- Header -->
-        <header class="header">
-            <h1>🏃 Running Tracker</h1>
-            <p class="subtitle">Real-time GPS Running Tracker with Safety Alerts</p>
-        </header>
-
-        <!-- Main Content -->
-        <main class="main-content">
-            <!-- Map Section -->
-            <section class="card map-card">
-                <div id="map" class="map"></div>
-                <div class="map-overlay">
-                    <div class="current-location">
-                        <span class="label">📍 Current Location</span>
-                        <span class="value" id="locationDisplay">Detecting...</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Stats Section -->
-            <section class="card stats-card">
-                <h2>📊 Running Statistics</h2>
-                <div class="stats-grid">
-                    <div class="stat-item">
-                        <span class="stat-label">Distance</span>
-                        <span class="stat-value" id="distance">0.00</span>
-                        <span class="stat-unit">KM</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Time</span>
-                        <span class="stat-value" id="time">00:00:00</span>
-                        <span class="stat-unit">HH:MM:SS</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Speed</span>
-                        <span class="stat-value" id="speed">0.0</span>
-                        <span class="stat-unit">KM/H</span>
-                    </div>
-                    <div class="stat-item">
-                        <span class="stat-label">Pace</span>
-                        <span class="stat-value" id="pace">00:00</span>
-                        <span class="stat-unit">MIN/KM</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Detailed Stats -->
-            <section class="card">
-                <h2>📈 Detailed Information</h2>
-                <div class="detailed-stats">
-                    <div class="detail-row">
-                        <span class="label">Average Speed:</span>
-                        <span class="value" id="avgSpeed">0.0 km/h</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="label">Max Speed:</span>
-                        <span class="value" id="maxSpeed">0.0 km/h</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="label">Total Meters:</span>
-                        <span class="value" id="meters">0 m</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="label">Calories Burned:</span>
-                        <span class="value" id="calories">0</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="label">Elevation Gain:</span>
-                        <span class="value" id="elevation">0 m</span>
-                    </div>
-                    <div class="detail-row">
-                        <span class="label">GPS Accuracy:</span>
-                        <span class="value" id="accuracy">--</span>
-                    </div>
-                </div>
-            </section>
-
-            <!-- Control Buttons -->
-            <section class="card">
-                <h2>🎮 Controls</h2>
-                <div class="control-buttons">
-                    <button class="btn btn-start" id="startBtn">
-                        <span class="icon">▶️</span> Start Run
-                    </button>
-                    <button class="btn btn-pause" id="pauseBtn" disabled>
-                        <span class="icon">⏸️</span> Pause
-                    </button>
-                    <button class="btn btn-resume" id="resumeBtn" disabled>
-                        <span class="icon">▶️</span> Resume
-                    </button>
-                    <button class="btn btn-stop" id="stopBtn" disabled>
-                        <span class="icon">⏹️</span> Stop
-                    </button>
-                </div>
-            </section>
-
-            <!-- Safety Settings -->
-            <section class="card">
-                <h2>⚠️ Safety Alerts & Settings</h2>
-                <div class="settings-group">
-                    <div class="setting-item">
-                        <span>Enable Danger Alerts</span>
-                        <label class="toggle">
-                            <input type="checkbox" id="dangerAlerts" checked>
-                            <span class="slider-toggle"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <span>Enable Vibration</span>
-                        <label class="toggle">
-                            <input type="checkbox" id="vibrationToggle" checked>
-                            <span class="slider-toggle"></span>
-                        </label>
-                    </div>
-                    <div class="setting-item">
-                        <span>Enable Sound Alerts</span>
-                        <label class="toggle">
-                            <input type="checkbox" id="soundToggle" checked>
-                            <span class="slider-toggle"></span>
-                        </label>
-                    </div>
-                </div>
-
-                <div class="danger-zones">
-                    <h3>Danger Zone Settings</h3>
-                    <div class="setting-row">
-                        <label>Speed Warning Threshold (km/h):</label>
-                        <input type="number" id="speedThreshold" min="10" max="50" value="25" class="input-control">
-                    </div>
-                    <div class="setting-row">
-                        <label>Danger Zone Check Interval (seconds):</label>
-                        <input type="number" id="dangerCheckInterval" min="5" max="60" value="30" class="input-control">
-                    </div>
-                </div>
-            </section>
-
-            <!-- Alerts Display -->
-            <section class="card alerts-card">
-                <h2>🚨 Active Alerts</h2>
-                <div id="alertsList" class="alerts-list">
-                    <p class="no-alerts">No active alerts</p>
-                </div>
-            </section>
-
-            <!-- Route History -->
-            <section class="card">
-                <h2>📍 Route Path</h2>
-                <div class="route-info">
-                    <span>Total Points: <strong id="pointCount">0</strong></span>
-                    <span>Route Duration: <strong id="routeDuration">00:00:00</strong></span>
-                    <button class="btn btn-secondary" id="clearRouteBtn">Clear Route</button>
-                </div>
-            </section>
-
-            <!-- Export & Share -->
-            <section class="card">
-                <h2>💾 Save & Share</h2>
-                <div class="export-buttons">
-                    <button class="btn btn-info" id="saveRunBtn">
-                        <span class="icon">💾</span> Save Run
-                    </button>
-                    <button class="btn btn-info" id="shareRunBtn">
-                        <span class="icon">📤</span> Share Run
-                    </button>
-                    <button class="btn btn-info" id="downloadGPXBtn">
-                        <span class="icon">📥</span> Download GPX
-                    </button>
-                </div>
-            </section>
-
-            <!-- Run History -->
-            <section class="card">
-                <h2>📜 Recent Runs</h2>
-                <div id="runHistory" class="run-history">
-                    <p class="no-data">No runs recorded yet</p>
-                </div>
-            </section>
-        </main>
-
-        <!-- Footer -->
-        <footer class="footer">
-            <p>🎯 Stay safe and enjoy your run!</p>
-            <p id="lastUpdated">Last updated: Just now</p>
-        </footer>
+        <div class="icon">🏃</div>
+        <h1>Running Tracker</h1>
+        <p>Real-time running tracker using Google Maps with live location sharing</p>
+        
+        <div id="status"></div>
+        
+        <div class="buttons">
+            <button class="btn-primary" id="openGoogleMaps" onclick="openGoogleMaps()">
+                📍 Open Google Maps with Your Location
+            </button>
+            <button class="btn-secondary" id="shareLocation" onclick="shareLocation()">
+                🔗 Share Location Link
+            </button>
+        </div>
+        
+        <div class="info">
+            <strong>Features:</strong>
+            <ul>
+                <li>✅ Real-time GPS tracking</li>
+                <li>✅ Distance calculation</li>
+                <li>✅ Speed monitoring</li>
+                <li>✅ Share location with others</li>
+                <li>✅ Works on all devices</li>
+            </ul>
+        </div>
+        
+        <div id="locationInfo" style="display: none; margin-top: 20px; text-align: left;">
+            <strong>Your Location:</strong>
+            <p id="coordsDisplay" style="margin-top: 8px; font-family: monospace; color: #667eea;"></p>
+        </div>
     </div>
 
-    <!-- Alert Toast Container -->
-    <div id="toastContainer" class="toast-container"></div>
-
     <script>
-    (function(){
-        var diag = document.getElementById('diagnostics');
-        if(!diag){
-            diag = document.createElement('div');
-            diag.id = 'diagnostics';
-            document.body.appendChild(diag);
-        }
-        function show(msg){
-            diag.style.display = 'block';
-            diag.setAttribute('aria-hidden','false');
-            diag.innerText = msg;
-        }
-        window.addEventListener('error', function(e){
-            try{ show('Error: '+e.message+'\nFile: '+e.filename+':'+e.lineno+':'+e.colno); }catch(err){}
-        });
-        window.addEventListener('unhandledrejection', function(e){
-            try{ show('Unhandled rejection: '+(e.reason && e.reason.message ? e.reason.message : JSON.stringify(e.reason))); }catch(err){}
-        });
-        // provide a quick ready message
-        window.addEventListener('load', function(){
-            diag.style.display = 'none';
-            diag.setAttribute('aria-hidden','true');
-        });
-    })();
-    </script>
+        let currentLocation = null;
 
-    <script src="running-tracker.js"></script>
+        // Request location on page load
+        document.addEventListener('DOMContentLoaded', () => {
+            getLocation();
+        });
+
+        function getLocation() {
+            const statusEl = document.getElementById('status');
+            
+            if (!navigator.geolocation) {
+                statusEl.innerHTML = '<div class="status error">❌ Geolocation not supported</div>';
+                return;
+            }
+
+            statusEl.innerHTML = '<div class="status loading">📍 Getting your location...</div>';
+
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    currentLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+                    
+                    statusEl.innerHTML = `<div class="status success">✅ Location acquired (±${Math.round(position.coords.accuracy)}m)</div>`;
+                    document.getElementById('locationInfo').style.display = 'block';
+                    document.getElementById('coordsDisplay').textContent = 
+                        `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`;
+                    
+                    // Start watching position for updates
+                    watchPosition();
+                },
+                (error) => {
+                    statusEl.innerHTML = `<div class="status error">⚠️ ${error.message}</div>`;
+                },
+                {
+                    enableHighAccuracy: true,
+                    timeout: 10000,
+                    maximumAge: 0
+                }
+            );
+        }
+
+        function watchPosition() {
+            navigator.geolocation.watchPosition(
+                (position) => {
+                    currentLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy
+                    };
+                    document.getElementById('coordsDisplay').textContent = 
+                        `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)} (±${Math.round(position.coords.accuracy)}m)`;
+                },
+                null,
+                { enableHighAccuracy: true, maximumAge: 0 }
+            );
+        }
+
+        function openGoogleMaps() {
+            if (!currentLocation) {
+                alert('📍 Getting location... Please wait a moment and try again');
+                getLocation();
+                return;
+            }
+
+            // Open Google Maps with current location
+            const mapsUrl = `https://maps.google.com/?q=${currentLocation.lat},${currentLocation.lng}&z=16`;
+            window.open(mapsUrl, '_blank');
+        }
+
+        function shareLocation() {
+            if (!currentLocation) {
+                alert('📍 Getting location... Please wait a moment and try again');
+                getLocation();
+                return;
+            }
+
+            // Create shareable Google Maps link
+            const shareUrl = `https://maps.google.com/?q=${currentLocation.lat},${currentLocation.lng}&z=16`;
+            
+            if (navigator.share) {
+                navigator.share({
+                    title: 'My Running Location',
+                    text: 'Track my live location on Google Maps',
+                    url: shareUrl
+                }).catch(err => console.log('Share error:', err));
+            } else {
+                // Fallback: copy to clipboard
+                const tempInput = document.createElement('textarea');
+                tempInput.value = shareUrl;
+                document.body.appendChild(tempInput);
+                tempInput.select();
+                document.execCommand('copy');
+                document.body.removeChild(tempInput);
+                alert('📋 Google Maps link copied to clipboard!');
+            }
+        }
+    </script>
 </body>
 </html>
