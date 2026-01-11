@@ -524,6 +524,16 @@
 
                         // Calculate speed
                         if (runState.lastLocation && runState.lastLocation.timestamp) {
+                    let distance = 0;
+                    if (currentLocation) {
+                        distance = calculateDistance(currentLocation, newLocation);
+                        // only accumulate distance while running
+                        if (runState.isRunning) {
+                            runState.totalDistance += distance;
+                        }
+
+                        // Calculate speed using previous timestamp when available
+                        if (runState.lastLocation && runState.lastLocation.timestamp) {
                             const timeDiffSeconds = (newLocation.timestamp - runState.lastLocation.timestamp) / 1000;
                             if (timeDiffSeconds > 0) {
                                 const speedKmh = (distance / timeDiffSeconds) * 3.6;
@@ -533,14 +543,6 @@
                                 }
                             }
                         }
-                    }
-
-                    currentLocation = newLocation;
-                    runState.lastLocation = newLocation;
-                    runState.locations.push(newLocation);
-
-                    updateCoordinatesDisplay();
-                    updateDisplay();
 
                     // Check alert distance
                     checkAlertDistance();
@@ -553,7 +555,7 @@
                 {
                     enableHighAccuracy: true,
                     maximumAge: 0,
-                    timeout: 10000
+                    log(`📍 Updated: ${distance.toFixed(3)}km | Total: ${runState.totalDistance.toFixed(2)}km`, 'info');
                 }
             );
         }
@@ -575,7 +577,17 @@
             runState.isRunning = true;
             runState.isPaused = false;
             runState.startTime = Date.now() - runState.totalPausedDuration;
-            runState.lastLocation = null;
+            // Seed lastLocation with current GPS fix to avoid a large first jump
+            if (currentLocation) {
+                runState.lastLocation = {
+                    lat: currentLocation.lat,
+                    lng: currentLocation.lng,
+                    accuracy: currentLocation.accuracy || 0,
+                    timestamp: Date.now()
+                };
+            } else {
+                runState.lastLocation = null;
+            }
             runState.totalDistance = 0;
             runState.currentSpeed = 0;
             runState.maxSpeed = 0;
