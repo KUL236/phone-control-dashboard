@@ -3,15 +3,16 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Running Tracker - Google Maps</title>
+    <title>Running Tracker - Real-time GPS</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
+
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
             min-height: 100vh;
             display: flex;
@@ -19,221 +20,463 @@
             justify-content: center;
             padding: 20px;
         }
+
         .container {
             background: white;
-            border-radius: 12px;
+            border-radius: 16px;
             box-shadow: 0 20px 60px rgba(0,0,0,0.3);
-            padding: 40px;
-            max-width: 550px;
-            text-align: center;
+            padding: 30px;
+            max-width: 420px;
+            width: 100%;
         }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+
+        .header .icon {
+            font-size: 56px;
+            margin-bottom: 15px;
+        }
+
         h1 {
             color: #333;
-            margin-bottom: 15px;
             font-size: 28px;
+            margin-bottom: 8px;
         }
-        p {
+
+        .subtitle {
             color: #666;
-            margin-bottom: 15px;
-            line-height: 1.6;
             font-size: 14px;
         }
-        .buttons {
-            display: flex;
-            gap: 12px;
-            flex-direction: column;
+
+        /* Stats Display */
+        .stats-display {
+            background: #f8f9fa;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 25px;
+            text-align: center;
+            border: 2px solid #e0e0e0;
         }
+
+        .stat-item {
+            margin-bottom: 18px;
+        }
+
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+
+        .stat-label {
+            color: #666;
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            font-weight: 600;
+        }
+
+        .stat-value {
+            font-size: 42px;
+            font-weight: bold;
+            color: #667eea;
+            font-family: 'Courier New', monospace;
+            letter-spacing: 2px;
+        }
+
+        .stat-value.distance {
+            color: #28a745;
+        }
+
+        .stat-value.speed {
+            color: #ff6b35;
+        }
+
+        /* Location Info */
+        .location-info {
+            background: #d1ecf1;
+            border-left: 4px solid #0c5460;
+            padding: 12px;
+            margin-bottom: 20px;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #0c5460;
+        }
+
+        .location-info strong {
+            display: block;
+            margin-bottom: 6px;
+        }
+
+        /* Alert Setup */
+        .alert-setup {
+            background: #fff3cd;
+            border-left: 4px solid #856404;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 8px;
+            border: 1px solid #ffeeba;
+        }
+
+        .alert-setup h3 {
+            color: #856404;
+            font-size: 14px;
+            margin-bottom: 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .alert-input-group {
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .alert-input-group input {
+            flex: 1;
+            padding: 10px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 14px;
+            background: white;
+        }
+
+        .alert-input-group button {
+            padding: 10px 16px;
+            background: #856404;
+            color: white;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 13px;
+        }
+
+        .alert-input-group button:hover {
+            background: #704b00;
+        }
+
+        .alert-status {
+            margin-top: 10px;
+            padding: 10px;
+            background: white;
+            border-radius: 4px;
+            font-size: 13px;
+            color: #333;
+            font-weight: 500;
+        }
+
+        /* Control Buttons */
+        .controls {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .controls.full {
+            grid-template-columns: 1fr;
+        }
+
         button {
-            padding: 15px 25px;
+            padding: 15px;
             font-size: 16px;
             border: none;
             border-radius: 8px;
             cursor: pointer;
-            transition: all 0.3s ease;
             font-weight: 600;
+            transition: all 0.3s ease;
         }
-        .btn-primary {
-            background: #667eea;
-            color: white;
-        }
-        .btn-primary:hover {
-            background: #5568d3;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.3);
-        }
-        .btn-secondary {
-            background: #f0f0f0;
-            color: #333;
-        }
-        .btn-secondary:hover {
-            background: #e0e0e0;
-            transform: translateY(-2px);
-        }
-        .btn-success {
+
+        .btn-start {
             background: #28a745;
             color: white;
-            padding: 12px 20px;
-            font-size: 14px;
+            grid-column: 1 / -1;
         }
-        .btn-success:hover {
+
+        .btn-start:hover:not(:disabled) {
             background: #218838;
+            transform: translateY(-2px);
+            box-shadow: 0 8px 16px rgba(40, 167, 69, 0.3);
         }
-        .info {
-            background: #f8f9fa;
-            border-left: 4px solid #667eea;
-            padding: 15px;
-            margin-top: 20px;
-            text-align: left;
-            border-radius: 4px;
-            font-size: 13px;
-        }
-        .info strong {
+
+        .btn-pause {
+            background: #ffc107;
             color: #333;
-            display: block;
-            margin-bottom: 8px;
         }
-        .info ul {
-            margin-left: 20px;
+
+        .btn-pause:hover:not(:disabled) {
+            background: #e0a800;
+            transform: translateY(-2px);
         }
-        .info li {
-            margin: 4px 0;
-            color: #555;
+
+        .btn-resume {
+            background: #17a2b8;
+            color: white;
         }
-        .status {
-            margin-top: 15px;
-            padding: 12px;
-            border-radius: 6px;
-            font-weight: 500;
-            font-size: 14px;
+
+        .btn-resume:hover:not(:disabled) {
+            background: #138496;
+            transform: translateY(-2px);
         }
-        .status.success {
-            background: #d4edda;
-            color: #155724;
+
+        .btn-stop {
+            background: #dc3545;
+            color: white;
         }
-        .status.loading {
-            background: #cfe2ff;
-            color: #084298;
+
+        .btn-stop:hover:not(:disabled) {
+            background: #c82333;
+            transform: translateY(-2px);
         }
-        .status.error {
-            background: #f8d7da;
-            color: #842029;
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
         }
-        .status.info {
-            background: #d1ecf1;
-            color: #0c5460;
-        }
-        .icon {
-            font-size: 48px;
+
+        /* Preset Locations */
+        .preset-locations {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            justify-content: center;
             margin-bottom: 15px;
         }
-        .location-input {
-            display: none;
-            margin-top: 20px;
-            padding: 15px;
-            background: #f8f9fa;
-            border-radius: 8px;
-        }
-        .location-input input {
-            width: 100%;
-            padding: 10px;
-            margin: 10px 0;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-        .location-input button {
-            margin-top: 10px;
-            width: 100%;
-        }
+
         .preset-btn {
             background: #f0f0f0;
             color: #333;
-            padding: 10px 15px;
-            margin: 5px;
-            font-size: 13px;
+            padding: 8px 12px;
+            font-size: 12px;
+            border: 1px solid #ddd;
             border-radius: 6px;
             cursor: pointer;
-            border: 1px solid #ddd;
+            transition: all 0.2s;
         }
+
         .preset-btn:hover {
             background: #e0e0e0;
+            border-color: #999;
         }
-        .divider {
-            margin: 20px 0;
-            border-top: 1px solid #ddd;
+
+        /* Diagnostics */
+        .diagnostics {
+            background: #f8f9fa;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            padding: 12px;
+            margin-top: 20px;
+            max-height: 120px;
+            overflow-y: auto;
+            font-size: 11px;
+            font-family: monospace;
+            color: #333;
+        }
+
+        .diagnostics div {
+            margin: 3px 0;
+            padding: 2px 0;
+        }
+
+        .diagnostics .success {
+            color: #28a745;
+        }
+
+        .diagnostics .error {
+            color: #dc3545;
+        }
+
+        .diagnostics .info {
+            color: #17a2b8;
+        }
+
+        /* Status Messages */
+        .status {
+            padding: 12px;
+            margin-bottom: 15px;
+            border-radius: 6px;
+            font-size: 13px;
+            font-weight: 500;
+        }
+
+        .status.success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .status.error {
+            background: #f8d7da;
+            color: #842029;
+            border: 1px solid #f5c6cb;
+        }
+
+        .status.info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+
+        .status.loading {
+            background: #cfe2ff;
+            color: #084298;
+            border: 1px solid #b6d4fe;
+        }
+
+        /* Gps Badge */
+        .gps-badge {
+            display: inline-block;
+            padding: 6px 10px;
+            background: #e8f4f8;
+            border: 1px solid #b8dae8;
+            border-radius: 16px;
+            font-size: 12px;
+            color: #0c5460;
+            margin-top: 10px;
+        }
+
+        .gps-badge.active {
+            background: #d4edda;
+            border-color: #a8d8a8;
+            color: #155724;
+        }
+
+        @media (max-width: 480px) {
+            .container {
+                padding: 20px;
+            }
+
+            .stat-value {
+                font-size: 36px;
+            }
+
+            .controls {
+                gap: 8px;
+            }
+
+            button {
+                padding: 12px;
+                font-size: 14px;
+            }
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <div class="icon">🏃</div>
-        <h1>Running Tracker</h1>
-        <p>Real-time running tracker using Google Maps with live location sharing</p>
-        
-        <div id="status"></div>
-        
-        <div class="buttons">
-            <button class="btn-primary" id="openGoogleMaps" onclick="openGoogleMaps()">
-                📍 Open Google Maps with Your Location
-            </button>
-            <button class="btn-secondary" id="shareLocation" onclick="shareLocation()">
-                🔗 Share Location Link
-            </button>
+        <!-- Header -->
+        <div class="header">
+            <div class="icon">🏃</div>
+            <h1>Running Tracker</h1>
+            <p class="subtitle">Real-time GPS running tracker with alerts</p>
         </div>
 
-        <div class="divider"></div>
+        <!-- Location Status -->
+        <div id="locationStatus" class="status info">
+            📍 Attempting to acquire GPS location...
+        </div>
 
-        <p style="margin-bottom: 10px;"><strong>No GPS? Use Manual Location:</strong></p>
-        <div style="display: flex; gap: 8px; flex-wrap: wrap; justify-content: center; margin-bottom: 15px;">
+        <!-- Stats Display -->
+        <div class="stats-display">
+            <div class="stat-item">
+                <div class="stat-label">⏱️ Elapsed Time</div>
+                <div class="stat-value" id="timerDisplay">00:00:00</div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-label">📍 Distance</div>
+                <div class="stat-value distance" id="distanceDisplay">0.00 km</div>
+            </div>
+
+            <div class="stat-item">
+                <div class="stat-label">⚡ Current Speed</div>
+                <div class="stat-value speed" id="speedDisplay">0.0 km/h</div>
+            </div>
+        </div>
+
+        <!-- GPS Info -->
+        <div id="gpsInfo" style="display: none;">
+            <div class="location-info">
+                <strong>📍 Location:</strong>
+                <div id="coordsDisplay">Waiting for GPS...</div>
+                <div class="gps-badge" id="gpsBadge">📡 Waiting...</div>
+            </div>
+        </div>
+
+        <!-- Preset Locations -->
+        <div class="preset-locations" id="presetContainer" style="display: none;">
             <button class="preset-btn" onclick="usePresetLocation(26.9124, 75.7873)">📍 Jaipur</button>
             <button class="preset-btn" onclick="usePresetLocation(28.7041, 77.1025)">📍 Delhi</button>
             <button class="preset-btn" onclick="usePresetLocation(19.0760, 72.8777)">📍 Mumbai</button>
-            <button class="preset-btn" onclick="usePresetLocation(40.7128, -74.0060)">📍 New York</button>
+            <button class="preset-btn" onclick="usePresetLocation(40.7128, -74.0060)">📍 NY</button>
         </div>
-        <button class="btn-secondary" onclick="toggleManualInput()" style="width: 100%;">
-            ✏️ Enter Custom Location
-        </button>
 
-        <div class="location-input" id="manualInput">
-            <p style="text-align: left; margin-bottom: 8px;"><strong>Enter Latitude & Longitude:</strong></p>
-            <input type="number" id="latInput" placeholder="Latitude (e.g., 26.9124)" step="0.0001">
-            <input type="number" id="lngInput" placeholder="Longitude (e.g., 75.7873)" step="0.0001">
-            <button class="btn-success" onclick="useManualLocation()">✅ Use This Location</button>
+        <!-- Alert Setup -->
+        <div class="alert-setup">
+            <h3>🔔 Alert Mode</h3>
+            <p style="font-size: 12px; color: #856404; margin-bottom: 12px;">
+                Set a target distance. Your phone will vibrate when you reach it!
+            </p>
+            <div class="alert-input-group">
+                <input type="number" id="alertKm" placeholder="Enter km (e.g., 5)" min="0.1" step="0.1" value="">
+                <button onclick="setAlertDistance()">⚠️ Set Alert</button>
+            </div>
+            <div class="alert-status" id="alertStatus" style="display: none;">
+                🎯 Alert set for <span id="alertValue">--</span> km
+            </div>
         </div>
-        
-        <div class="info">
-            <strong>📋 How to Use:</strong>
-            <ul>
-                <li>✅ Tap "Open Google Maps" to start</li>
-                <li>✅ Or select a preset city above</li>
-                <li>✅ Or enter your own coordinates</li>
-                <li>✅ Share location link with others</li>
-            </ul>
+
+        <!-- Control Buttons -->
+        <div class="controls">
+            <button class="btn-start" id="startBtn" onclick="startRun()">🚀 START RUN</button>
+            <button class="btn-pause" id="pauseBtn" onclick="pauseRun()" disabled>⏸️ PAUSE</button>
+            <button class="btn-resume" id="resumeBtn" onclick="resumeRun()" disabled style="display: none;">▶️ RESUME</button>
+            <button class="btn-stop" id="stopBtn" onclick="stopRun()" disabled>⏹️ STOP</button>
         </div>
-        
-        <div id="locationInfo" style="display: none; margin-top: 20px; text-align: left; background: #e8f4f8; padding: 15px; border-radius: 6px;">
-            <strong>📍 Current Location:</strong>
-            <p id="coordsDisplay" style="margin-top: 8px; font-family: monospace; color: #667eea; font-size: 13px;"></p>
-        </div>
+
+        <!-- Diagnostics -->
+        <div class="diagnostics" id="diagnostics"></div>
     </div>
 
     <script>
+        // ==================== STATE MANAGEMENT ====================
+        let runState = {
+            isRunning: false,
+            isPaused: false,
+            startTime: null,
+            pausedTime: 0,
+            totalPausedDuration: 0,
+            lastLocation: null,
+            totalDistance: 0,
+            currentSpeed: 0,
+            maxSpeed: 0,
+            locations: [],
+            alertDistance: null,
+            alertTriggered: false,
+            watchId: null
+        };
+
         let currentLocation = null;
 
-        // Try to get GPS on page load
+        // ==================== INITIALIZATION ====================
         document.addEventListener('DOMContentLoaded', () => {
-            getLocationGPS();
+            log('🚀 App initialized', 'info');
+            requestGPS();
         });
 
-        function getLocationGPS() {
-            const statusEl = document.getElementById('status');
-            
+        // ==================== GPS TRACKING ====================
+        function requestGPS() {
             if (!navigator.geolocation) {
-                statusEl.innerHTML = '<div class="status info">ℹ️ GPS not available - please use manual location below</div>';
+                updateLocationStatus('❌ Geolocation not available', 'error');
+                log('❌ Geolocation not supported', 'error');
+                document.getElementById('presetContainer').style.display = 'flex';
                 return;
             }
 
-            statusEl.innerHTML = '<div class="status loading">📍 Trying to get GPS... (may take 10-15 seconds)</div>';
+            updateLocationStatus('📍 Requesting GPS location...', 'loading');
 
             navigator.geolocation.getCurrentPosition(
                 (position) => {
@@ -242,15 +485,15 @@
                         lng: position.coords.longitude,
                         accuracy: position.coords.accuracy
                     };
-                    
-                    statusEl.innerHTML = `<div class="status success">✅ GPS acquired (±${Math.round(position.coords.accuracy)}m)</div>`;
-                    document.getElementById('locationInfo').style.display = 'block';
-                    document.getElementById('coordsDisplay').textContent = 
-                        `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`;
+                    updateLocationStatus(`✅ GPS acquired (±${Math.round(position.coords.accuracy)}m)`, 'success');
+                    document.getElementById('gpsInfo').style.display = 'block';
+                    updateCoordinatesDisplay();
+                    log(`📍 GPS: ${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`, 'success');
                 },
                 (error) => {
-                    statusEl.innerHTML = '<div class="status info">ℹ️ GPS not available - please select a location below</div>';
-                    console.log('GPS error:', error.code);
+                    log(`⚠️ GPS Error: ${error.message}`, 'error');
+                    updateLocationStatus('⚠️ GPS not available - use preset locations', 'info');
+                    document.getElementById('presetContainer').style.display = 'flex';
                 },
                 {
                     enableHighAccuracy: true,
@@ -260,87 +503,311 @@
             );
         }
 
+        function startContinuousTracking() {
+            if (runState.watchId !== null) {
+                navigator.geolocation.clearWatch(runState.watchId);
+            }
+
+            runState.watchId = navigator.geolocation.watchPosition(
+                (position) => {
+                    const newLocation = {
+                        lat: position.coords.latitude,
+                        lng: position.coords.longitude,
+                        accuracy: position.coords.accuracy,
+                        timestamp: Date.now()
+                    };
+
+                    if (currentLocation) {
+                        // Calculate distance using Haversine formula
+                        const distance = calculateDistance(currentLocation, newLocation);
+                        runState.totalDistance += distance;
+
+                        // Calculate speed
+                        if (runState.lastLocation && runState.lastLocation.timestamp) {
+                            const timeDiffSeconds = (newLocation.timestamp - runState.lastLocation.timestamp) / 1000;
+                            if (timeDiffSeconds > 0) {
+                                const speedKmh = (distance / timeDiffSeconds) * 3.6;
+                                if (speedKmh > 0 && speedKmh < 50) {
+                                    runState.currentSpeed = speedKmh;
+                                    runState.maxSpeed = Math.max(runState.maxSpeed, speedKmh);
+                                }
+                            }
+                        }
+                    }
+
+                    currentLocation = newLocation;
+                    runState.lastLocation = newLocation;
+                    runState.locations.push(newLocation);
+
+                    updateCoordinatesDisplay();
+                    updateDisplay();
+
+                    // Check alert distance
+                    checkAlertDistance();
+
+                    log(`📍 Updated: ${distance.toFixed(3)}km | Total: ${runState.totalDistance.toFixed(2)}km`, 'info');
+                },
+                (error) => {
+                    log(`⚠️ Watch error: ${error.message}`, 'error');
+                },
+                {
+                    enableHighAccuracy: true,
+                    maximumAge: 0,
+                    timeout: 10000
+                }
+            );
+        }
+
+        function stopContinuousTracking() {
+            if (runState.watchId !== null) {
+                navigator.geolocation.clearWatch(runState.watchId);
+                runState.watchId = null;
+            }
+        }
+
+        // ==================== RUNNING CONTROLS ====================
+        function startRun() {
+            if (!currentLocation) {
+                showAlert('❌ Please select a location first', 'error');
+                return;
+            }
+
+            runState.isRunning = true;
+            runState.isPaused = false;
+            runState.startTime = Date.now() - runState.totalPausedDuration;
+            runState.lastLocation = null;
+            runState.totalDistance = 0;
+            runState.currentSpeed = 0;
+            runState.maxSpeed = 0;
+            runState.locations = [];
+            runState.alertTriggered = false;
+
+            log('🚀 RUN STARTED', 'success');
+            updateButtonStates();
+            startContinuousTracking();
+            startTimer();
+            updateDisplay();
+        }
+
+        function pauseRun() {
+            if (!runState.isRunning) return;
+
+            runState.isRunning = false;
+            runState.isPaused = true;
+            runState.pausedTime = Date.now();
+            stopContinuousTracking();
+
+            log('⏸️  RUN PAUSED', 'info');
+            updateButtonStates();
+        }
+
+        function resumeRun() {
+            if (!runState.isPaused) return;
+
+            runState.totalPausedDuration += Date.now() - runState.pausedTime;
+            runState.isRunning = true;
+            runState.isPaused = false;
+
+            log('▶️  RUN RESUMED', 'success');
+            updateButtonStates();
+            startContinuousTracking();
+            startTimer();
+        }
+
+        function stopRun() {
+            stopContinuousTracking();
+            runState.isRunning = false;
+            runState.isPaused = false;
+
+            log('⏹️  RUN STOPPED', 'success');
+            log(`📊 Final: ${runState.totalDistance.toFixed(2)}km | Max Speed: ${runState.maxSpeed.toFixed(1)}km/h`, 'success');
+            updateButtonStates();
+        }
+
+        // ==================== TIMER ====================
+        let timerInterval = null;
+
+        function startTimer() {
+            if (timerInterval) clearInterval(timerInterval);
+
+            timerInterval = setInterval(() => {
+                if (runState.isRunning) {
+                    updateDisplay();
+                }
+            }, 1000);
+        }
+
+        function getElapsedTime() {
+            if (!runState.startTime) return 0;
+            return Math.floor((Date.now() - runState.startTime) / 1000);
+        }
+
+        function formatTime(seconds) {
+            const hours = Math.floor(seconds / 3600);
+            const minutes = Math.floor((seconds % 3600) / 60);
+            const secs = seconds % 60;
+            return `${String(hours).padStart(2, '0')}:${String(minutes).padStart(2, '0')}:${String(secs).padStart(2, '0')}`;
+        }
+
+        // ==================== ALERT SYSTEM ====================
+        function setAlertDistance() {
+            const km = parseFloat(document.getElementById('alertKm').value);
+            if (isNaN(km) || km <= 0) {
+                showAlert('❌ Enter a valid distance', 'error');
+                return;
+            }
+
+            runState.alertDistance = km;
+            runState.alertTriggered = false;
+            document.getElementById('alertStatus').style.display = 'block';
+            document.getElementById('alertValue').textContent = km.toFixed(1);
+            log(`⚠️ Alert set for ${km.toFixed(1)}km`, 'success');
+        }
+
+        function checkAlertDistance() {
+            if (!runState.alertDistance || runState.alertTriggered) return;
+
+            if (runState.totalDistance >= runState.alertDistance) {
+                triggerAlert();
+            }
+        }
+
+        function triggerAlert() {
+            runState.alertTriggered = true;
+            log(`🎉 ALERT! Reached ${runState.alertDistance}km! 🎉`, 'success');
+
+            // Vibration pattern: long, short, long
+            if (navigator.vibrate) {
+                navigator.vibrate([200, 100, 200, 100, 300]);
+            }
+
+            // Visual alert
+            showAlert(`🎉 YOU'VE REACHED ${runState.alertDistance.toFixed(1)}km! 🎉`, 'success');
+
+            // Sound alert
+            playAlertSound();
+        }
+
+        function playAlertSound() {
+            try {
+                const audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                const oscillator = audioContext.createOscillator();
+                const gainNode = audioContext.createGain();
+
+                oscillator.connect(gainNode);
+                gainNode.connect(audioContext.destination);
+
+                oscillator.frequency.value = 800;
+                gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+                gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + 0.5);
+
+                oscillator.start(audioContext.currentTime);
+                oscillator.stop(audioContext.currentTime + 0.5);
+            } catch (e) {
+                console.log('Audio not available');
+            }
+        }
+
+        // ==================== DISPLAY UPDATES ====================
+        function updateDisplay() {
+            const elapsed = getElapsedTime();
+            document.getElementById('timerDisplay').textContent = formatTime(elapsed);
+            document.getElementById('distanceDisplay').textContent = `${runState.totalDistance.toFixed(2)} km`;
+            document.getElementById('speedDisplay').textContent = `${runState.currentSpeed.toFixed(1)} km/h`;
+        }
+
+        function updateCoordinatesDisplay() {
+            if (!currentLocation) return;
+            document.getElementById('coordsDisplay').textContent =
+                `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`;
+            document.getElementById('gpsBadge').textContent = '📡 Active (GPS)';
+            document.getElementById('gpsBadge').classList.add('active');
+        }
+
+        function updateLocationStatus(message, type) {
+            const statusEl = document.getElementById('locationStatus');
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
+        }
+
+        function updateButtonStates() {
+            const startBtn = document.getElementById('startBtn');
+            const pauseBtn = document.getElementById('pauseBtn');
+            const resumeBtn = document.getElementById('resumeBtn');
+            const stopBtn = document.getElementById('stopBtn');
+
+            if (runState.isRunning) {
+                startBtn.disabled = true;
+                pauseBtn.disabled = false;
+                resumeBtn.style.display = 'none';
+                resumeBtn.disabled = true;
+                stopBtn.disabled = false;
+            } else if (runState.isPaused) {
+                startBtn.disabled = true;
+                pauseBtn.disabled = true;
+                resumeBtn.style.display = 'block';
+                resumeBtn.disabled = false;
+                stopBtn.disabled = false;
+            } else {
+                startBtn.disabled = false;
+                pauseBtn.disabled = true;
+                resumeBtn.style.display = 'none';
+                resumeBtn.disabled = true;
+                stopBtn.disabled = true;
+            }
+        }
+
+        // ==================== LOCATION HELPERS ====================
         function usePresetLocation(lat, lng) {
             currentLocation = {
                 lat: lat,
                 lng: lng,
                 accuracy: 50
             };
-            
-            const statusEl = document.getElementById('status');
-            statusEl.innerHTML = `<div class="status success">✅ Location set</div>`;
-            document.getElementById('locationInfo').style.display = 'block';
-            document.getElementById('coordsDisplay').textContent = 
-                `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`;
-            document.getElementById('manualInput').style.display = 'none';
+            updateLocationStatus('✅ Location set manually', 'success');
+            document.getElementById('gpsInfo').style.display = 'block';
+            updateCoordinatesDisplay();
+            log(`📍 Preset location set: ${lat.toFixed(4)}, ${lng.toFixed(4)}`, 'success');
         }
 
-        function toggleManualInput() {
-            const input = document.getElementById('manualInput');
-            input.style.display = input.style.display === 'none' ? 'block' : 'none';
+        function calculateDistance(loc1, loc2) {
+            const R = 6371; // Earth radius in km
+            const dLat = (loc2.lat - loc1.lat) * (Math.PI / 180);
+            const dLon = (loc2.lng - loc1.lng) * (Math.PI / 180);
+            const a =
+                Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+                Math.cos(loc1.lat * (Math.PI / 180)) *
+                Math.cos(loc2.lat * (Math.PI / 180)) *
+                Math.sin(dLon / 2) * Math.sin(dLon / 2);
+            const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1 - a));
+            return R * c;
         }
 
-        function useManualLocation() {
-            const lat = parseFloat(document.getElementById('latInput').value);
-            const lng = parseFloat(document.getElementById('lngInput').value);
+        // ==================== UTILITY FUNCTIONS ====================
+        function log(message, type = 'info') {
+            console.log(message);
+            const diagEl = document.getElementById('diagnostics');
+            const div = document.createElement('div');
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            if (type) div.className = type;
+            diagEl.appendChild(div);
 
-            if (isNaN(lat) || isNaN(lng)) {
-                alert('❌ Please enter valid latitude and longitude');
-                return;
+            // Keep only last 10 lines
+            while (diagEl.children.length > 10) {
+                diagEl.removeChild(diagEl.firstChild);
             }
-
-            if (lat < -90 || lat > 90 || lng < -180 || lng > 180) {
-                alert('❌ Invalid coordinates\nLatitude: -90 to 90\nLongitude: -180 to 180');
-                return;
-            }
-
-            currentLocation = {
-                lat: lat,
-                lng: lng,
-                accuracy: 50
-            };
-
-            const statusEl = document.getElementById('status');
-            statusEl.innerHTML = `<div class="status success">✅ Custom location set</div>`;
-            document.getElementById('locationInfo').style.display = 'block';
-            document.getElementById('coordsDisplay').textContent = 
-                `${currentLocation.lat.toFixed(6)}, ${currentLocation.lng.toFixed(6)}`;
-            document.getElementById('manualInput').style.display = 'none';
         }
 
-        function openGoogleMaps() {
-            if (!currentLocation) {
-                alert('📍 Please select or enter a location first');
-                return;
-            }
+        function showAlert(message, type = 'info') {
+            const statusEl = document.getElementById('locationStatus');
+            const tempClass = statusEl.className;
+            statusEl.textContent = message;
+            statusEl.className = `status ${type}`;
 
-            const mapsUrl = `https://maps.google.com/?q=${currentLocation.lat},${currentLocation.lng}&z=16`;
-            window.open(mapsUrl, '_blank');
-        }
-
-        function shareLocation() {
-            if (!currentLocation) {
-                alert('📍 Please select or enter a location first');
-                return;
-            }
-
-            const shareUrl = `https://maps.google.com/?q=${currentLocation.lat},${currentLocation.lng}&z=16`;
-            
-            if (navigator.share) {
-                navigator.share({
-                    title: 'My Running Location',
-                    text: 'Track my live location on Google Maps',
-                    url: shareUrl
-                }).catch(err => console.log('Share error:', err));
-            } else {
-                const tempInput = document.createElement('textarea');
-                tempInput.value = shareUrl;
-                document.body.appendChild(tempInput);
-                tempInput.select();
-                document.execCommand('copy');
-                document.body.removeChild(tempInput);
-                alert('📋 Google Maps link copied to clipboard!');
-            }
+            setTimeout(() => {
+                statusEl.className = tempClass;
+                updateLocationStatus('Ready', 'success');
+            }, 3000);
         }
     </script>
 </body>
