@@ -378,6 +378,10 @@
         <div id="locationStatus" class="status info">
             📍 Attempting to acquire GPS location...
         </div>
+        <div style="display:flex;gap:8px;align-items:center;margin-bottom:12px;">
+            <button class="preset-btn" onclick="checkGeolocationPermission()">🔎 Check GPS Permission</button>
+            <div id="permissionHint" style="font-size:12px;color:#444;"></div>
+        </div>
 
         <!-- Stats Display -->
         <div class="stats-display">
@@ -478,6 +482,13 @@
 
             updateLocationStatus('📍 Requesting GPS location...', 'loading');
 
+            // check permission state first if available
+            if (navigator.permissions && navigator.permissions.query) {
+                navigator.permissions.query({ name: 'geolocation' }).then(p => {
+                    document.getElementById('permissionHint').textContent = `Permission: ${p.state}`;
+                }).catch(() => {});
+            }
+
             navigator.geolocation.getCurrentPosition(
                 (position) => {
                     currentLocation = {
@@ -501,6 +512,48 @@
                     maximumAge: 0
                 }
             );
+        }
+
+        // User-invoked permission check helper
+        function checkGeolocationPermission() {
+            const hintEl = document.getElementById('permissionHint');
+            if (!navigator.geolocation) {
+                hintEl.textContent = 'Geolocation API not available in this browser.';
+                updateLocationStatus('❌ Geolocation not available', 'error');
+                return;
+            }
+
+            if (navigator.permissions && navigator.permissions.query) {
+                navigator.permissions.query({ name: 'geolocation' }).then(result => {
+                    hintEl.textContent = `Permission: ${result.state}`;
+                    if (result.state === 'granted') {
+                        updateLocationStatus('✅ GPS permission granted', 'success');
+                        getLocationGPS();
+                    } else if (result.state === 'prompt') {
+                        updateLocationStatus('ℹ️ Permission prompt; the browser will ask when requesting GPS.', 'info');
+                        // trigger a prompt
+                        navigator.geolocation.getCurrentPosition(pos => {
+                            currentLocation = { lat: pos.coords.latitude, lng: pos.coords.longitude, accuracy: pos.coords.accuracy };
+                            updateCoordinatesDisplay();
+                            updateLocationStatus('✅ GPS acquired', 'success');
+                        }, err => {
+                            updateLocationStatus('❌ Permission denied or GPS failed', 'error');
+                        }, { enableHighAccuracy: true, timeout: 10000 });
+                    } else {
+                        // denied
+                        updateLocationStatus('❌ GPS permission denied. If using HTTP, geolocation often requires HTTPS.', 'error');
+                        hintEl.textContent += ' — If on HTTP, try serving via HTTPS (ngrok) or use preset locations.';
+                        document.getElementById('presetContainer').style.display = 'flex';
+                    }
+                }).catch(err => {
+                    hintEl.textContent = 'Cannot read permission state';
+                    updateLocationStatus('ℹ️ Unable to read permission state; trying GPS directly', 'info');
+                    getLocationGPS();
+                });
+            } else {
+                hintEl.textContent = 'Permissions API not supported; attempting GPS request.';
+                getLocationGPS();
+            }
         }
 
         // Try to get current position as a Promise (used when user presses Start)
