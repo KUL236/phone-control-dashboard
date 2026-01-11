@@ -39,61 +39,37 @@ document.addEventListener('DOMContentLoaded', function() {
     requestLocationPermission();
 });
 
-// Initialize Google Map
+// Initialize Leaflet Map
 function initializeMap() {
     // Default map center
-    const defaultCenter = { lat: 40.7128, lng: -74.0060 };
+    const defaultCenter = [40.7128, -74.0060];
 
-    map = new google.maps.Map(document.getElementById('map'), {
-        zoom: 16,
-        center: defaultCenter,
-        mapTypeControl: true,
-        mapTypeId: google.maps.MapTypeId.ROADMAP,
-        styles: getMapStyles()
-    });
+    map = L.map('map').setView(defaultCenter, 16);
 
-    // Initialize polyline for route
-    pathPolyline = new google.maps.Polyline({
-        map: map,
-        geodesic: true,
-        strokeColor: '#ff6b35',
-        strokeOpacity: 0.8,
-        strokeWeight: 4,
-        clickable: false
-    });
+    // Add OpenStreetMap tiles
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© OpenStreetMap contributors',
+        maxZoom: 19
+    }).addTo(map);
 
     // Create user marker
-    userMarker = new google.maps.Marker({
-        map: map,
-        title: 'Your Location',
-        icon: 'http://maps.google.com/mapfiles/ms/icons/blue-dot.png'
-    });
-}
+    userMarker = L.circleMarker(defaultCenter, {
+        radius: 10,
+        fillColor: '#3b82f6',
+        color: '#1e40af',
+        weight: 2,
+        opacity: 1,
+        fillOpacity: 0.8,
+        title: 'Your Location'
+    }).addTo(map);
 
-// Get custom map styles
-function getMapStyles() {
-    return [
-        {
-            "featureType": "all",
-            "elementType": "labels.text.fill",
-            "stylers": [{ "color": "#ffffff" }]
-        },
-        {
-            "featureType": "road",
-            "elementType": "geometry",
-            "stylers": [{ "color": "#1a1a1a" }]
-        },
-        {
-            "featureType": "water",
-            "elementType": "geometry",
-            "stylers": [{ "color": "#1a3a3a" }]
-        },
-        {
-            "featureType": "administrative",
-            "elementType": "geometry.stroke",
-            "stylers": [{ "color": "#444444" }]
-        }
-    ];
+    // Initialize polyline for route
+    pathPolyline = L.polyline([], {
+        color: '#ff6b35',
+        weight: 4,
+        opacity: 0.8,
+        smoothFactor: 1.0
+    }).addTo(map);
 }
 
 // Setup Event Listeners
@@ -148,7 +124,7 @@ function updateLocation(position) {
     document.getElementById('accuracy').textContent = `±${accuracy.toFixed(0)}m`;
 
     // Update marker and map center
-    userMarker.setPosition(newLocation);
+    userMarker.setLatLng(new L.LatLng(newLocation.lat, newLocation.lng));
     
     if (trackerState.isRunning && !trackerState.isPaused) {
         // Calculate distance and speed
@@ -191,7 +167,7 @@ function updateLocation(position) {
         updateLastUpdated();
     } else if (!trackerState.isRunning) {
         // Just show location without tracking
-        map.setCenter(newLocation);
+        map.panTo(new L.LatLng(newLocation.lat, newLocation.lng));
     }
 
     trackerState.currentLocation = newLocation;
@@ -228,9 +204,10 @@ function calculateDistance(loc1, loc2) {
 
 // Update Polyline
 function updatePolyline(location) {
-    const path = pathPolyline.getPath();
-    path.push(new google.maps.LatLng(location.lat, location.lng));
-    map.setCenter(location);
+    const path = pathPolyline.getLatLngs();
+    path.push(new L.LatLng(location.lat, location.lng));
+    pathPolyline.setLatLngs(path);
+    map.panTo(new L.LatLng(location.lat, location.lng));
 }
 
 // Check Danger Zones
@@ -345,7 +322,7 @@ function stopRun() {
 
 // Clear Route
 function clearRoute() {
-    pathPolyline.setPath([]);
+    pathPolyline.setLatLngs([]);
     trackerState.locations = [];
     trackerState.distances = [];
     trackerState.speeds = [];
