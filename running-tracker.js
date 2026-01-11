@@ -42,34 +42,111 @@ document.addEventListener('DOMContentLoaded', function() {
 // Initialize Leaflet Map
 function initializeMap() {
     // Default map center
-    const defaultCenter = [40.7128, -74.0060];
+    const defaultCenterLatLng = { lat: 40.7128, lng: -74.0060 };
 
-    map = L.map('map').setView(defaultCenter, 16);
+    if (isGoogleMaps()) {
+        // Initialize Google Map
+        map = new google.maps.Map(document.getElementById('map'), {
+            center: defaultCenterLatLng,
+            zoom: 16,
+            mapTypeId: google.maps.MapTypeId.ROADMAP
+        });
 
-    // Add OpenStreetMap tiles
-    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-        attribution: '© OpenStreetMap contributors',
-        maxZoom: 19
-    }).addTo(map);
+        // Create user marker
+        userMarker = new google.maps.Marker({
+            position: defaultCenterLatLng,
+            map: map,
+            title: 'Your Location'
+        });
 
-    // Create user marker
-    userMarker = L.circleMarker(defaultCenter, {
-        radius: 10,
-        fillColor: '#3b82f6',
-        color: '#1e40af',
-        weight: 2,
-        opacity: 1,
-        fillOpacity: 0.8,
-        title: 'Your Location'
-    }).addTo(map);
+        // Initialize polyline for route
+        pathPolyline = new google.maps.Polyline({
+            map: map,
+            geodesic: true,
+            strokeColor: '#ff6b35',
+            strokeOpacity: 0.8,
+            strokeWeight: 4
+        });
+    } else {
+        // Initialize Leaflet Map
+        const defaultCenter = [defaultCenterLatLng.lat, defaultCenterLatLng.lng];
 
-    // Initialize polyline for route
-    pathPolyline = L.polyline([], {
-        color: '#ff6b35',
-        weight: 4,
-        opacity: 0.8,
-        smoothFactor: 1.0
-    }).addTo(map);
+        map = L.map('map').setView(defaultCenter, 16);
+
+        // Add OpenStreetMap tiles
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors',
+            maxZoom: 19
+        }).addTo(map);
+
+        // Create user marker
+        userMarker = L.circleMarker(defaultCenter, {
+            radius: 10,
+            fillColor: '#3b82f6',
+            color: '#1e40af',
+            weight: 2,
+            opacity: 1,
+            fillOpacity: 0.8,
+            title: 'Your Location'
+        }).addTo(map);
+
+        // Initialize polyline for route
+        pathPolyline = L.polyline([], {
+            color: '#ff6b35',
+            weight: 4,
+            opacity: 0.8,
+            smoothFactor: 1.0
+        }).addTo(map);
+    }
+}
+
+// Helper: detect Google Maps availability
+function isGoogleMaps() {
+    return typeof window.google !== 'undefined' && typeof window.google.maps !== 'undefined';
+}
+
+// Add a point to the route (supports Google Maps and Leaflet)
+function addPointToPath(location) {
+    if (isGoogleMaps()) {
+        const latLng = new google.maps.LatLng(location.lat, location.lng);
+        const path = pathPolyline.getPath();
+        path.push(latLng);
+        map.panTo({ lat: location.lat, lng: location.lng });
+    } else {
+        const path = pathPolyline.getLatLngs();
+        path.push(new L.LatLng(location.lat, location.lng));
+        pathPolyline.setLatLngs(path);
+        map.panTo(new L.LatLng(location.lat, location.lng));
+    }
+}
+
+// Set user marker position (supports Google Maps and Leaflet)
+function setUserMarkerPosition(location) {
+    if (!location) return;
+    if (isGoogleMaps()) {
+        if (!userMarker) {
+            userMarker = new google.maps.Marker({
+                position: { lat: location.lat, lng: location.lng },
+                map: map,
+                title: 'Your Location'
+            });
+        } else {
+            userMarker.setPosition({ lat: location.lat, lng: location.lng });
+        }
+    } else {
+        if (!userMarker) {
+            userMarker = L.circleMarker([location.lat, location.lng], {
+                radius: 10,
+                fillColor: '#3b82f6',
+                color: '#1e40af',
+                weight: 2,
+                opacity: 1,
+                fillOpacity: 0.8
+            }).addTo(map);
+        } else {
+            userMarker.setLatLng(new L.LatLng(location.lat, location.lng));
+        }
+    }
 }
 
 // Setup Event Listeners
@@ -124,7 +201,7 @@ function updateLocation(position) {
     document.getElementById('accuracy').textContent = `±${accuracy.toFixed(0)}m`;
 
     // Update marker and map center
-    userMarker.setLatLng(new L.LatLng(newLocation.lat, newLocation.lng));
+    setUserMarkerPosition(newLocation);
     
     if (trackerState.isRunning && !trackerState.isPaused) {
         // Calculate distance and speed
@@ -136,8 +213,8 @@ function updateLocation(position) {
                 trackerState.distances.push(distance);
                 trackerState.locations.push(newLocation);
 
-                // Update polyline
-                updatePolyline(newLocation);
+                // Update polyline / path
+                addPointToPath(newLocation);
 
                 // Calculate speed (km/h)
                 const timeDiff = (newLocation.time - lastLocation.time) / 3600000; // Convert to hours
@@ -167,7 +244,11 @@ function updateLocation(position) {
         updateLastUpdated();
     } else if (!trackerState.isRunning) {
         // Just show location without tracking
-        map.panTo(new L.LatLng(newLocation.lat, newLocation.lng));
+        if (isGoogleMaps()) {
+            map.panTo({ lat: newLocation.lat, lng: newLocation.lng });
+        } else {
+            map.panTo(new L.LatLng(newLocation.lat, newLocation.lng));
+        }
     }
 
     trackerState.currentLocation = newLocation;
@@ -322,7 +403,11 @@ function stopRun() {
 
 // Clear Route
 function clearRoute() {
-    pathPolyline.setLatLngs([]);
+    if (isGoogleMaps()) {
+        pathPolyline.setPath([]);
+    } else {
+        pathPolyline.setLatLngs([]);
+    }
     trackerState.locations = [];
     trackerState.distances = [];
     trackerState.speeds = [];
