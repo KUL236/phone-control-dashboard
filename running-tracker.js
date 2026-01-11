@@ -30,21 +30,38 @@ let map;
 let userMarker;
 let pathPolyline;
 let dangerZones = [];
+// Which map provider was initialized: 'google' or 'leaflet'
+let mapProvider = null;
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
-    initializeMap();
-    setupEventListeners();
-    loadRunHistory();
-    requestLocationPermission();
+    // Show loading indicator
+    showToast('📍 Requesting your location...', 'info');
+    
+    // Request location BEFORE initializing map so we can center on user's real location
+    requestInitialLocation().then(() => {
+        initializeMap();
+        setupEventListeners();
+        loadRunHistory();
+        // Start continuous location tracking
+        startContinuousLocationTracking();
+        showToast('✅ Location acquired! Ready to track.', 'success');
+    }).catch(err => {
+        console.warn('Initial location fetch failed, using defaults:', err);
+        initializeMap();
+        setupEventListeners();
+        loadRunHistory();
+        startContinuousLocationTracking();
+        showToast('⚠️ Using default location (enable GPS for accuracy)', 'warning');
+    });
 });
 
 // Initialize Leaflet Map
 function initializeMap() {
-    // Default map center
-    const defaultCenterLatLng = { lat: 40.7128, lng: -74.0060 };
+    // Use user's current location if available, otherwise use default
+    const defaultCenterLatLng = trackerState.currentLocation || { lat: 40.7128, lng: -74.0060 };
 
-    if (isGoogleMaps()) {
+    if (typeof window.google !== 'undefined' && typeof window.google.maps !== 'undefined') {
         // Initialize Google Map
         map = new google.maps.Map(document.getElementById('map'), {
             center: defaultCenterLatLng,
@@ -67,6 +84,7 @@ function initializeMap() {
             strokeOpacity: 0.8,
             strokeWeight: 4
         });
+        mapProvider = 'google';
     } else {
         // Initialize Leaflet Map
         const defaultCenter = [defaultCenterLatLng.lat, defaultCenterLatLng.lng];
@@ -97,12 +115,68 @@ function initializeMap() {
             opacity: 0.8,
             smoothFactor: 1.0
         }).addTo(map);
+        mapProvider = 'leaflet';
     }
 }
 
 // Helper: detect Google Maps availability
 function isGoogleMaps() {
-    return typeof window.google !== 'undefined' && typeof window.google.maps !== 'undefined';
+    return mapProvider === 'google';
+}
+
+// Request initial location (one-time, with timeout)
+function requestInitialLocation() {
+    return new Promise((resolve, reject) => {
+        if (!navigator.geolocation) {
+            reject(new Error('Geolocation not supported'));
+            return;
+        }
+
+        const timeout = setTimeout(() => {
+            reject(new Error('Location request timeout'));
+        }, 10000); // 10 second timeout
+
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                clearTimeout(timeout);
+                const { latitude, longitude } = position.coords;
+                trackerState.currentLocation = {
+                    lat: latitude,
+                    lng: longitude,
+                    time: Date.now(),
+                    accuracy: position.coords.accuracy,
+                    altitude: position.coords.altitude || 0
+                };
+                resolve();
+            },
+            (error) => {
+                clearTimeout(timeout);
+                reject(error);
+            },
+            {
+                enableHighAccuracy: true,
+                timeout: 8000,
+                maximumAge: 0
+            }
+        );
+    });
+}
+
+// Start continuous location tracking (after map init)
+function startContinuousLocationTracking() {
+    if (navigator.geolocation) {
+        navigator.geolocation.watchPosition(
+            updateLocation,
+            handleLocationError,
+            {
+                enableHighAccuracy: true,
+                timeout: 5000,
+                maximumAge: 0
+            }
+        );
+    } else {
+        showToast('Geolocation not supported on this browser', 'danger');
+    }
 }
 
 // Add a point to the route (supports Google Maps and Leaflet)
@@ -165,22 +239,8 @@ function setupEventListeners() {
     document.getElementById('soundToggle').addEventListener('change', handleSoundToggle);
 }
 
-// Request Location Permission
-function requestLocationPermission() {
-    if (navigator.geolocation) {
-        navigator.geolocation.watchPosition(
-            updateLocation,
-            handleLocationError,
-            {
-                enableHighAccuracy: true,
-                timeout: 5000,
-                maximumAge: 0
-            }
-        );
-    } else {
-        showToast('Geolocation not supported on this browser', 'danger');
-    }
-}
+// Note: requestLocationPermission() is now handled by requestInitialLocation() and startContinuousLocationTracking()
+// Location tracking starts immediately on page load
 
 // Update Location
 function updateLocation(position) {
@@ -217,9 +277,13 @@ function updateLocation(position) {
                 addPointToPath(newLocation);
 
                 // Calculate speed (km/h)
-                const timeDiff = (newLocation.time - lastLocation.time) / 3600000; // Convert to hours
-                const speed = distance / timeDiff;
-                trackerState.speeds.push(speed);
+                const timeDiffMs = newLocation.time - lastLocation.time; // milliseconds
+                let speed = 0;
+                if (timeDiffMs > 0) {
+                    const timeDiffHours = timeDiffMs / 3600000; // Convert to hours
+                    speed = distance / timeDiffHours;
+                    trackerState.speeds.push(speed);
+                }
 
                 if (speed > trackerState.maxSpeed) {
                     trackerState.maxSpeed = speed;
@@ -351,7 +415,11 @@ function startRun() {
     document.getElementById('pauseBtn').disabled = false;
     document.getElementById('stopBtn').disabled = false;
 
-    pathPolyline.setPath([]);
+    if (isGoogleMaps()) {
+        pathPolyline.setPath([]);
+    } else {
+        pathPolyline.setLatLngs([]);
+    }
     clearAlerts();
 
     showToast('🏃 Run started!', 'success');
