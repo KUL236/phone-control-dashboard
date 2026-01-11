@@ -48,11 +48,12 @@ document.addEventListener('DOMContentLoaded', function() {
         showToast('✅ Location acquired! Ready to track.', 'success');
     }).catch(err => {
         console.warn('Initial location fetch failed, using defaults:', err);
+        // Initialize with default and let watchPosition update it
         initializeMap();
         setupEventListeners();
         loadRunHistory();
         startContinuousLocationTracking();
-        showToast('⚠️ Enable GPS to track from your location', 'warning');
+        showToast('📍 Waiting for GPS signal...', 'info');
     });
 });
 
@@ -132,13 +133,24 @@ function requestInitialLocation() {
             return;
         }
 
-        const timeout = setTimeout(() => {
-            reject(new Error('Location request timeout'));
-        }, 10000); // 10 second timeout
+        let timeoutId = null;
+        let watchId = null;
 
-        navigator.geolocation.getCurrentPosition(
+        // Set a quick timeout - if GPS doesn't respond in 3 seconds, just continue
+        timeoutId = setTimeout(() => {
+            if (watchId !== null) {
+                navigator.geolocation.clearWatch(watchId);
+            }
+            reject(new Error('GPS timeout - will use watchPosition'));
+        }, 3000); // 3 second timeout
+
+        // Use watchPosition for faster response on mobile
+        watchId = navigator.geolocation.watchPosition(
             (position) => {
-                clearTimeout(timeout);
+                clearTimeout(timeoutId);
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                }
                 const { latitude, longitude } = position.coords;
                 trackerState.currentLocation = {
                     lat: latitude,
@@ -147,15 +159,20 @@ function requestInitialLocation() {
                     accuracy: position.coords.accuracy,
                     altitude: position.coords.altitude || 0
                 };
+                console.log('📍 Location acquired:', latitude, longitude);
                 resolve();
             },
             (error) => {
-                clearTimeout(timeout);
+                clearTimeout(timeoutId);
+                if (watchId !== null) {
+                    navigator.geolocation.clearWatch(watchId);
+                }
+                console.error('Geolocation error:', error.code, error.message);
                 reject(error);
             },
             {
                 enableHighAccuracy: true,
-                timeout: 8000,
+                timeout: 5000,
                 maximumAge: 0
             }
         );
