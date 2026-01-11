@@ -208,9 +208,33 @@ function requestInitialLocation() {
 // Start continuous location tracking (after map init)
 function startContinuousLocationTracking() {
     if (navigator.geolocation) {
+        let firstLocationReceived = false;
         navigator.geolocation.watchPosition(
-            updateLocation,
-            handleLocationError,
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                
+                // On first location, update map center to actual location
+                if (!firstLocationReceived) {
+                    firstLocationReceived = true;
+                    logDiagnostic(`🎯 First GPS fix: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
+                    
+                    // Force map to center on actual location
+                    if (isGoogleMaps()) {
+                        map.setCenter({ lat: latitude, lng: longitude });
+                        map.setZoom(16);
+                    } else {
+                        map.setView([latitude, longitude], 16);
+                    }
+                    
+                    showToast('🎯 Centered on your location!', 'success');
+                }
+                
+                updateLocation(position);
+            },
+            (error) => {
+                logDiagnostic(`⚠️ GPS watch error: ${error.code}`);
+                handleLocationError(error);
+            },
             {
                 enableHighAccuracy: true,
                 timeout: 5000,
@@ -261,6 +285,7 @@ function setUserMarkerPosition(location) {
                 fillOpacity: 0.8
             }).addTo(map);
         } else {
+            // Update marker position
             userMarker.setLatLng(new L.LatLng(location.lat, location.lng));
         }
     }
@@ -301,7 +326,7 @@ function updateLocation(position) {
     // Store first location if not already stored
     if (!trackerState.currentLocation) {
         trackerState.currentLocation = newLocation;
-        console.log('✅ First location received:', latitude, longitude);
+        logDiagnostic(`📍 Location stored: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
     }
 
     // Update current location display
