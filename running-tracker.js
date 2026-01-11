@@ -35,18 +35,22 @@ let mapProvider = null;
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
+    logDiagnostic('🚀 App starting...');
     // Show loading indicator
     showToast('📍 Requesting your location...', 'info');
     
     // Request location BEFORE initializing map so we can center on user's real location
     requestInitialLocation().then(() => {
+        logDiagnostic('📍 Initializing map...');
         initializeMap();
         setupEventListeners();
         loadRunHistory();
         // Start continuous location tracking
         startContinuousLocationTracking();
         showToast('✅ Location acquired! Ready to track.', 'success');
+        logDiagnostic('✅ Map ready!');
     }).catch(err => {
+        logDiagnostic(`⚠️ Using default location`);
         console.warn('Initial location fetch failed, using defaults:', err);
         // Initialize with default and let watchPosition update it
         initializeMap();
@@ -60,7 +64,9 @@ document.addEventListener('DOMContentLoaded', function() {
 // Initialize Leaflet Map
 function initializeMap() {
     // Use user's current location if available, otherwise use default
-    const defaultCenterLatLng = trackerState.currentLocation || { lat: 40.7128, lng: -74.0060 };
+    let defaultCenterLatLng = trackerState.currentLocation || { lat: 40.7128, lng: -74.0060 };
+    
+    console.log('📍 Initializing map with location:', defaultCenterLatLng);
 
     if (typeof window.google !== 'undefined' && typeof window.google.maps !== 'undefined') {
         // Initialize Google Map
@@ -120,6 +126,21 @@ function initializeMap() {
     }
 }
 
+// Helper function to log diagnostics on page
+function logDiagnostic(msg) {
+    console.log(msg);
+    const diagEl = document.getElementById('diagnostics');
+    if (diagEl) {
+        const line = document.createElement('div');
+        line.textContent = msg;
+        diagEl.appendChild(line);
+        // Keep only last 10 lines
+        while (diagEl.children.length > 10) {
+            diagEl.removeChild(diagEl.firstChild);
+        }
+    }
+}
+
 // Helper: detect Google Maps availability
 function isGoogleMaps() {
     return mapProvider === 'google';
@@ -129,10 +150,12 @@ function isGoogleMaps() {
 function requestInitialLocation() {
     return new Promise((resolve, reject) => {
         if (!navigator.geolocation) {
+            logDiagnostic('❌ Geolocation not supported');
             reject(new Error('Geolocation not supported'));
             return;
         }
 
+        logDiagnostic('🔍 Requesting GPS location...');
         let timeoutId = null;
         let watchId = null;
 
@@ -141,6 +164,7 @@ function requestInitialLocation() {
             if (watchId !== null) {
                 navigator.geolocation.clearWatch(watchId);
             }
+            logDiagnostic('⏱️ GPS timeout (3s)');
             reject(new Error('GPS timeout - will use watchPosition'));
         }, 3000); // 3 second timeout
 
@@ -159,6 +183,7 @@ function requestInitialLocation() {
                     accuracy: position.coords.accuracy,
                     altitude: position.coords.altitude || 0
                 };
+                logDiagnostic(`✅ GPS: ${latitude.toFixed(4)}, ${longitude.toFixed(4)}`);
                 console.log('📍 Location acquired:', latitude, longitude);
                 resolve();
             },
@@ -167,6 +192,7 @@ function requestInitialLocation() {
                 if (watchId !== null) {
                     navigator.geolocation.clearWatch(watchId);
                 }
+                logDiagnostic(`⚠️ GPS error: ${error.code}`);
                 console.error('Geolocation error:', error.code, error.message);
                 reject(error);
             },
@@ -272,6 +298,12 @@ function updateLocation(position) {
         altitude: altitude
     };
 
+    // Store first location if not already stored
+    if (!trackerState.currentLocation) {
+        trackerState.currentLocation = newLocation;
+        console.log('✅ First location received:', latitude, longitude);
+    }
+
     // Update current location display
     document.getElementById('locationDisplay').textContent = 
         `${latitude.toFixed(6)}, ${longitude.toFixed(6)}`;
@@ -279,6 +311,15 @@ function updateLocation(position) {
 
     // Update marker and map center
     setUserMarkerPosition(newLocation);
+    
+    // Re-center map on first location or periodically during tracking
+    if (!trackerState.isRunning) {
+        if (isGoogleMaps()) {
+            map.panTo({ lat: latitude, lng: longitude });
+        } else {
+            map.panTo(new L.LatLng(latitude, longitude));
+        }
+    }
     
     if (trackerState.isRunning && !trackerState.isPaused) {
         // Calculate distance and speed
