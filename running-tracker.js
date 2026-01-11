@@ -35,31 +35,19 @@ let mapProvider = null;
 
 // Initialize Application
 document.addEventListener('DOMContentLoaded', function() {
-    // Show loading indicator
-    showToast('📍 Requesting your location...', 'info');
-    
-    // Request location BEFORE initializing map so we can center on user's real location
-    requestInitialLocation().then(() => {
-        initializeMap();
-        setupEventListeners();
-        loadRunHistory();
-        // Start continuous location tracking
-        startContinuousLocationTracking();
-        showToast('✅ Location acquired! Ready to track.', 'success');
-    }).catch(err => {
-        console.warn('Initial location fetch failed, using defaults:', err);
-        initializeMap();
-        setupEventListeners();
-        loadRunHistory();
-        startContinuousLocationTracking();
-        showToast('⚠️ Using default location (enable GPS for accuracy)', 'warning');
-    });
+    // Initialize map with New York location
+    initializeMap();
+    setupEventListeners();
+    loadRunHistory();
+    // Start continuous location tracking for real-time updates
+    startContinuousLocationTracking();
+    showToast('📍 Map set to New York. Start running!', 'info');
 });
 
-// Initialize Leaflet Map
+// Initialize Leaflet Map - Always use New York
 function initializeMap() {
-    // Use user's current location if available, otherwise use default
-    const defaultCenterLatLng = trackerState.currentLocation || { lat: 40.7128, lng: -74.0060 };
+    // Always center on New York
+    const defaultCenterLatLng = { lat: 40.7128, lng: -74.0060 };
 
     if (typeof window.google !== 'undefined' && typeof window.google.maps !== 'undefined') {
         // Initialize Google Map
